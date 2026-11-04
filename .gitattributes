@@ -1,0 +1,8 @@
+# Text files are stored with LF line endings; these are never treated as text,
+# so line-ending conversion can't corrupt them.
+* text=auto
+*.pdf binary
+*.glb binary
+*.jpg binary
+*.png binary
+*.woff2 binary
