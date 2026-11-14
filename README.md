@@ -97,6 +97,7 @@ All text lives in **`src/data/portfolio.js`**: profile, experience, projects, sk
 - `testing.steps` and `testing.toolkit` fill the Test Lab: the pipeline blocks, the "How I test" panel and the testing side of the classic page's "How I build & test". `development.steps` and `development.toolkit` fill its development side.
 - Each tool in a toolkit gets its icon from `src/data/toolIcons.js`, by name: a brand logo and colour, or a simple line drawing. A new tool without an entry there shows a dot until one is added.
 - The resume is `public/resume/Brahmanand_Suryawanshi_Resume.pdf`: a one-page resume written from this portfolio's content (same headline, skills, experience and projects). Replace that file to update both View and Download, and keep the two in step when either changes.
+- Link previews (LinkedIn, WhatsApp, Slack, X) use `public/og-image.jpg` (1200 × 630: the island with the name and both roles over it), set in the `og:` and `twitter:` tags of `index.html`. Those tags, the canonical link and the JSON-LD block hold the live URL, `https://brahma4383.github.io/portfolio/`; change them together if the site moves. Redo the image if the name or roles change; LinkedIn caches previews, so its [Post Inspector](https://www.linkedin.com/post-inspector/) refreshes it.
 
 Positions of the areas, roads and the bowling lane are in `src/world/layout.js`.
 
