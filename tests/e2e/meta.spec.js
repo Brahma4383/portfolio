@@ -14,7 +14,7 @@ function jpegSize(bytes) {
 
 test.describe('Link previews and search', () => {
   test('the link-preview image is served at the size its tags promise', { tag: '@smoke' }, async ({ page, request }) => {
-    await page.goto('/')
+    await page.goto('./')
     const meta = (property) => page.locator(`meta[property="${property}"]`).getAttribute('content')
     const image = await meta('og:image')
     // share scrapers (LinkedIn, WhatsApp) only follow absolute URLs
@@ -28,7 +28,7 @@ test.describe('Link previews and search', () => {
   })
 
   test('the structured data describes me, with my real links', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('./')
     const person = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent())
     expect(person['@type']).toBe('Person')
     expect(person.name).toBe(profile.name)

@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "playwright test",
     "test:smoke": "playwright test --grep @smoke",
+    "test:live": "playwright test --config playwright.live.config.js --grep @smoke",
     "test:report": "playwright show-report"
   },
   "dependencies": {

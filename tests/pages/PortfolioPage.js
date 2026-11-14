@@ -44,7 +44,9 @@ export class PortfolioPage {
   }
 
   async open() {
-    await this.page.goto('/')
+    // './' rather than '/', so it also works when the site lives in a folder
+    // (the live site is at /portfolio/)
+    await this.page.goto('./')
   }
 
   async waitUntilLoaded() {
