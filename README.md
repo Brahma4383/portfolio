@@ -41,7 +41,7 @@ npm run preview    # serve dist/ locally to check it
 
 `dist/` is plain static files with relative paths (`base: './'` in `vite.config.js`), so it can be uploaded as-is to GitHub Pages, Netlify, Vercel or any static host, at the root or in a subfolder.
 
-On GitHub it deploys itself: `.github/workflows/deploy.yml` builds the site and publishes it on GitHub Pages every time `main` is pushed (in the repository's **Settings → Pages**, **Source** must be **GitHub Actions**). It's live at **https://brahma4383.github.io/portfolio/**.
+On GitHub it deploys itself: `.github/workflows/deploy.yml` runs on every push to `main`. It builds the site, runs the `@smoke` tests against that build, and only if they all pass publishes that same build on GitHub Pages. If a test fails, the live site stays as it was and the test report can be downloaded from the run's page. (In the repository's **Settings → Pages**, **Source** must be **GitHub Actions**.) It's live at **https://brahma4383.github.io/portfolio/**.
 
 ## Tests
 
@@ -68,7 +68,7 @@ npm run test:report  # open the HTML report of the last run
 | `e2e/no-webgl.spec.js` | Chrome with WebGL turned off falls back to the classic page |
 | `e2e/garage.spec.js` | The picker lists every car and switches instantly; `C` opens it and the choice survives a reload; the Garage has a board and pad per car and parking on a pad switches cars; the Garage doesn't count as explored |
 
-The tests read their expected data from `src/data/portfolio.js` and `src/world/layout.js`, so adding a project or an area adds its test automatically. They run on the installed Google Chrome (`channel: 'chrome'`), so no extra browser download is needed. If Chrome isn't installed, remove `channel` in `playwright.config.js` and run `npx playwright install chromium`.
+The tests read their expected data from `src/data/portfolio.js` and `src/world/layout.js`, so adding a project or an area adds its test automatically. They run on the installed Google Chrome (`channel: 'chrome'`), so no extra browser download is needed. If Chrome isn't installed, remove `channel` in `playwright.config.js` and run `npx playwright install chromium`. On GitHub Actions they use the runner's Chrome, which has no GPU: there Chrome draws the island in software (SwiftShader), so the time limits are longer.
 
 ## Controls
 

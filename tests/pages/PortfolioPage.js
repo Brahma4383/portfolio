@@ -48,8 +48,9 @@ export class PortfolioPage {
   }
 
   async waitUntilLoaded() {
-    // Building the island takes a few seconds on slow (software-rendered) machines.
-    await expect(this.startButton).toBeEnabled({ timeout: 45_000 })
+    // Building the island takes a few seconds on slow (software-rendered) machines,
+    // and longer on CI, which has no GPU at all.
+    await expect(this.startButton).toBeEnabled({ timeout: process.env.CI ? 90_000 : 45_000 })
   }
 
   async startEngine() {

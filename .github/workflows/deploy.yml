@@ -1,4 +1,5 @@
-# Builds the site and publishes it on GitHub Pages every time main is pushed.
+# Builds the site, tests it and publishes it on GitHub Pages every time main is
+# pushed. If a test fails, nothing is published and the live site stays as it was.
 # (Settings → Pages → Source must be set to "GitHub Actions".)
 name: Deploy to GitHub Pages
 
@@ -20,7 +21,9 @@ concurrency:
 
 jobs:
   build:
+    name: Build and test
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -28,7 +31,18 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run build
+      # Builds the site into dist/, serves it, and runs the @smoke tests against it
+      # in the runner's Google Chrome (see playwright.config.js).
+      - name: Build and run the smoke tests
+        run: npm run test:smoke
+      - name: Keep the test report if a test failed
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 14
+      # publish exactly the build the tests just checked
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
