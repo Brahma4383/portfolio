@@ -22,6 +22,8 @@ export const profile = {
     },
   ],
   location: 'Navi Mumbai, Maharashtra',
+  // Shown in the Contact area and the classic page's Contact section.
+  availability: 'I’m open to QA, test automation and backend roles.',
   summary:
     'I work on both sides of the same software. As a backend developer I build REST APIs and ERP modules with Python, ' +
     'Django, Django REST Framework and PostgreSQL. As a software tester I test web applications by hand and automate them ' +

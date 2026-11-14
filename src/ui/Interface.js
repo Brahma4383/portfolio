@@ -598,7 +598,7 @@ export class Interface {
     return `
       <p class="eyebrow">Contact</p>
       <h2>Let’s talk</h2>
-      <p>I’m open to QA, test automation and backend roles. Park on a pad and press <kbd>Enter</kbd>, or use the links below.</p>
+      <p>${escapeHtml(profile.availability)} Park on a pad and press <kbd>Enter</kbd>, or use the links below.</p>
       <ul class="links">${contactRows()}</ul>`
   }
 
@@ -844,6 +844,7 @@ export class Interface {
 
       <section class="classic__section" id="s-contact" aria-labelledby="c-contact">
         <h2 id="c-contact">Contact</h2>
+        <p class="classic__muted">${escapeHtml(profile.availability)} Based in ${escapeHtml(profile.location)}.</p>
         <ul class="links links--light">${contactRows()}</ul>
       </section>
 
