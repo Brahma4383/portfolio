@@ -48,7 +48,7 @@ On GitHub it deploys itself: `.github/workflows/deploy.yml` builds the site and 
 The site has its own end-to-end test suite in `tests/`, written with **Playwright** using the **Page Object Model**:
 
 ```bash
-npm test             # all 54 tests (builds the site and serves it automatically)
+npm test             # all 59 tests (builds the site and serves it automatically)
 npm run test:smoke   # only the tests tagged @smoke
 npm run test:report  # open the HTML report of the last run
 ```
@@ -57,13 +57,14 @@ npm run test:report  # open the HTML report of the last run
 |---|---|
 | `tests/pages/PortfolioPage.js` | Page object: every selector and action lives here |
 | `tests/fixtures.js` | Shared setup: fails any test that logs a console error, stubs GitHub/LinkedIn so tests never depend on them |
-| `e2e/start.spec.js` | Start screen, HUD, every button has an accessible name |
+| `e2e/start.spec.js` | Start screen, HUD, the first hint is skipped when you jump straight into an area, every button has an accessible name |
 | `e2e/zones.spec.js` | Data-driven: each area opens the right panel; explored counter; closed panels stay closed; the Stormtrooper loads, plays emotes and every trick, and a move asked for mid-flip waits its turn; a knocked crate stack and knocked pixel letters rebuild 20 s later; Test Lab steps; the bug radar counts the bugs and points to the nearest, also after leaving the lab and coming back |
 | `e2e/projects.spec.js` | Data-driven: each project's title, tags and link; crashing into a board breaks it and it rebuilds 15–20 s later; Enter opens the link in a new tab |
 | `e2e/resume.spec.js` | PDF is served; **View** opens a new tab; **Download** saves the right file name, in every place it appears |
 | `e2e/classic.spec.js` | Classic page sections; development and testing sides with all their steps and tools; the toolkit loops move and stop while hovered; the 3D character loads and switches idle → walk → run, acts out every API console request, answers pokes (429 when poked too fast) and fidgets when left alone; back to the island; every link loads and external links open safely |
 | `e2e/controls.spec.js` | Night mode, sound setting survives a reload, Escape, R, driving with W |
-| `e2e/mobile.spec.js` | Pixel 7 emulation: touch controls, bottom-sheet panels, joystick drives the car |
+| `e2e/mobile.spec.js` | Pixel 7 emulation: touch controls, bottom-sheet panels, the menu opens the classic view, the classic page shows the name before the 3D character, joystick drives the car |
+| `e2e/meta.spec.js` | The link-preview image is served at the size its tags promise; the structured data (JSON-LD) matches the profile and its links |
 | `e2e/no-webgl.spec.js` | Chrome with WebGL turned off falls back to the classic page |
 | `e2e/garage.spec.js` | The picker lists every car and switches instantly; `C` opens it and the choice survives a reload; the Garage has a board and pad per car and parking on a pad switches cars; the Garage doesn't count as explored |
 
