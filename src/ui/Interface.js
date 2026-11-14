@@ -34,6 +34,7 @@ const ROBOT_REQUESTS = [
 ]
 
 const NEW_TAB = 'target="_blank" rel="noopener noreferrer"'
+const FIRST_HINT = 'Drive into an area to read about it'
 const linkAttrs = (href) => (href.startsWith('mailto:') || href.startsWith('tel:') ? '' : NEW_TAB)
 
 // Two ways to get the resume: open it in the browser, or save the PDF.
@@ -259,8 +260,9 @@ export class Interface {
     // the HUD's pieces glide in a moment after the intro starts to lift away
     setTimeout(() => this.el.hud.classList.add('is-open'), 350)
     // a first hint, unless something else is already being said (like a car switch)
+    // or the car is already in an area (a quick jump from the menu)
     setTimeout(() => {
-      if (!this.el.toast.classList.contains('is-visible')) this.toast('Drive into an area to read about it', 3600)
+      if (!this.trigger && !this.el.toast.classList.contains('is-visible')) this.toast(FIRST_HINT, 3600)
     }, 2600)
   }
 
@@ -384,6 +386,8 @@ export class Interface {
       return false
     }
     if (trigger.kind === 'zone') this.markVisited(trigger.id)
+    // the first hint has done its job once the car is in an area
+    if (this.el.toast.textContent === FIRST_HINT) this.el.toast.classList.remove('is-visible')
     if (this.dismissed === trigger.id) return false
 
     const zoneId = { zone: trigger.id, project: 'projects', contact: 'contact', car: 'garage', garage: 'garage' }[trigger.kind]

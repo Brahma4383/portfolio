@@ -19,6 +19,15 @@ test.describe('Start screen', () => {
     await expect(portfolio.toast).toHaveText('Drive into an area to read about it')
   })
 
+  test('jumping straight into an area skips the "drive into an area" hint', async ({ page, portfolio }) => {
+    await portfolio.startEngine()
+    await portfolio.goTo('projects')
+    await portfolio.expectPanelFor('projects')
+    // the hint is due 2.6 s after the start; wait past that, then make sure it never came
+    await page.waitForTimeout(3200)
+    await expect(portfolio.toast).not.toHaveClass(/is-visible/)
+  })
+
   test('every visible button has an accessible name', async ({ page, portfolio }) => {
     await portfolio.startEngine()
     const unnamed = await page.locator('button:visible').evaluateAll((buttons) =>
