@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- GitHub Pages serves this page for any address on the site that doesn't exist, at
+         any depth, so its styles are inline and its links are absolute. -->
+    <title>Page not found · Brahmanand Suryawanshi</title>
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#2b2d42" />
+    <link rel="icon" href="https://brahma4383.github.io/portfolio/favicon.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        --ink: #2b2d42;
+        --text: #f7f4ee;
+        --muted: #b8bbcb;
+        --coral: #ff5a4e;
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 40px;
+        padding: 24px 16px;
+        background: radial-gradient(120% 90% at 50% 0%, #3a3d5c 0%, var(--ink) 60%);
+        color: var(--text);
+        font: 400 1rem/1.6 'Segoe UI', system-ui, -apple-system, sans-serif;
+        text-align: center;
+      }
+
+      main {
+        max-width: 34rem;
+      }
+
+      .code {
+        margin: 0 0 8px;
+        color: var(--coral);
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.3em;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2rem, 7vw, 3rem);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+      }
+
+      p {
+        margin: 0 0 28px;
+        color: var(--muted);
+      }
+
+      /* same pill as the site's main button; the label is large and bold so white on
+         coral stays readable */
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 54px;
+        padding: 0 1.8rem;
+        border-radius: 999px;
+        background: var(--coral);
+        color: #fff;
+        font-size: 1.2rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition:
+          transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+          box-shadow 0.22s ease;
+      }
+
+      .button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 22px rgba(255, 90, 78, 0.35);
+      }
+
+      .button:focus-visible {
+        outline: 3px solid #ffd166;
+        outline-offset: 2px;
+      }
+
+      footer {
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .button {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="code">404</p>
+      <h1>Wrong turn</h1>
+      <p>There’s no page at this address. It may have moved, or the link has a typo.</p>
+      <a class="button" href="https://brahma4383.github.io/portfolio/">Back to the portfolio</a>
+    </main>
+    <footer>Brahmanand Suryawanshi · Backend Developer &amp; Software Tester</footer>
+  </body>
+</html>

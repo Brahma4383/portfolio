@@ -43,12 +43,14 @@ npm run preview    # serve dist/ locally to check it
 
 On GitHub it deploys itself: `.github/workflows/deploy.yml` runs on every push to `main`. It builds the site, runs the `@smoke` tests against that build, and only if they all pass publishes that same build on GitHub Pages. If a test fails, the live site stays as it was and the test report can be downloaded from the run's page. (In the repository's **Settings → Pages**, **Source** must be **GitHub Actions**.) It's live at **https://brahma4383.github.io/portfolio/**.
 
+An address on the site that doesn't exist gets `public/404.html`, a small self-contained page that links back to the portfolio.
+
 ## Tests
 
 The site has its own end-to-end test suite in `tests/`, written with **Playwright** using the **Page Object Model**:
 
 ```bash
-npm test             # all 59 tests (builds the site and serves it automatically)
+npm test             # all 61 tests (builds the site and serves it automatically)
 npm run test:smoke   # only the tests tagged @smoke
 npm run test:report  # open the HTML report of the last run
 ```
@@ -65,6 +67,7 @@ npm run test:report  # open the HTML report of the last run
 | `e2e/controls.spec.js` | Night mode, sound setting survives a reload, Escape, R, driving with W |
 | `e2e/mobile.spec.js` | Pixel 7 emulation: touch controls, bottom-sheet panels, the menu opens the classic view, the classic page shows the name before the 3D character, joystick drives the car |
 | `e2e/meta.spec.js` | The link-preview image is served at the size its tags promise; the structured data (JSON-LD) matches the profile and its links |
+| `e2e/not-found.spec.js` | The 404 page says so and links back to the home page's own address; against the live site, a missing address answers 404 with that page |
 | `e2e/no-webgl.spec.js` | Chrome with WebGL turned off falls back to the classic page |
 | `e2e/garage.spec.js` | The picker lists every car and switches instantly; `C` opens it and the choice survives a reload; the Garage has a board and pad per car and parking on a pad switches cars; the Garage doesn't count as explored |
 
