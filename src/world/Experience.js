@@ -275,8 +275,8 @@ export class Experience {
         if (trigger?.kind === 'zone') this.minimap.visited.add(trigger.id)
         if (trigger?.id === 'about') this.zones.stormtrooper.greet()
         if (trigger?.kind === 'car') this.setCar(trigger.carId)
-        // keep the Stormtrooper in view while the car is in the About area
-        this.cameraRig.setInterest(trigger?.id === 'about' ? this.zones.stormtrooper.position : null)
+        const interest = this.interestFor(trigger)
+        this.cameraRig.setInterest(interest?.point, interest ?? {})
         if (this.ui.showTrigger(trigger)) this.sound.chime()
         this.updateFraming()
       }
@@ -300,6 +300,18 @@ export class Experience {
     }
 
     this.renderer.render(this.scene, this.camera)
+  }
+
+  // What the camera keeps in view along with the car. In the About area that's the
+  // Stormtrooper (so his emotes can be watched with the panel open); in any other area
+  // it's the middle of the area, so its boards don't end up hidden behind the panel.
+  // Parked on a pad, the board is right in front of the car, so nothing extra is needed.
+  // The middle of a big area can be 30 m away, so that pull is capped (and kept sideways,
+  // away from the panel) to keep the car on screen.
+  interestFor(trigger) {
+    if (trigger?.kind !== 'zone') return null
+    if (trigger.id === 'about') return { point: this.zones.stormtrooper.position }
+    return { point: trigger, maxShift: 8, sideways: true }
   }
 
   // While the Test Lab's panel is open, its bug radar shows where the bugs are around

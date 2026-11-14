@@ -121,7 +121,7 @@ src/
     CarBody.js          builds a car body from a design in data/cars.js
     Physics.js          cannon-es world for props + simple 2D collisions for the car
     Props.js            knock-over letters, skill crates, bowling pins
-    CameraRig.js        intro orbit, follow camera, zoom, framing around the panel and the Stormtrooper
+    CameraRig.js        intro orbit, follow camera, zoom; keeps the car clear of the panel, and the area (or the Stormtrooper) in view
     Environment.js      lights, shadows, day/night
     Effects.js          dust puffs and tyre marks
   ui/

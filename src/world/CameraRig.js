@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { clamp, damp, easeInOutCubic, lerp } from '../utils/math.js'
+import { clamp, damp, easeInOutCubic } from '../utils/math.js'
 
 // The camera keeps a fixed angle (like a diorama) and slides along with the car.
 // Before the start button is pressed it slowly circles the whole island.
@@ -25,6 +25,8 @@ export class CameraRig {
     this.interest = new THREE.Vector3()
     this.interestWeight = 0
     this.interestTarget = 0
+    this.interestMaxShift = Infinity
+    this.interestSideways = false
 
     this.focus = new THREE.Vector3()
     this.lookAt = new THREE.Vector3()
@@ -69,9 +71,14 @@ export class CameraRig {
   }
 
   // While `point` is set the camera looks halfway between the car and it, so both stay
-  // in view. Pass null to go back to following the car alone.
-  setInterest(point) {
+  // in view. For points that can be far away, `maxShift` (metres) caps how far that pulls
+  // the view off the car, and `sideways` keeps the pull east-west only (the info panel
+  // hides the right of the screen; what's north of the car is in view anyway).
+  // Pass null to go back to following the car alone.
+  setInterest(point, { maxShift = Infinity, sideways = false } = {}) {
     if (point) this.interest.set(point.x, 0, point.z)
+    this.interestMaxShift = maxShift
+    this.interestSideways = sideways
     this.interestTarget = point ? 1 : 0
   }
 
@@ -89,14 +96,13 @@ export class CameraRig {
     this.framing.x = damp(this.framing.x, this.framingTarget.x, 3, dt)
     this.framing.y = damp(this.framing.y, this.framingTarget.y, 3, dt)
     this.interestWeight = damp(this.interestWeight, this.interestTarget, 2.5, dt)
-    const toInterest = this.interestWeight * 0.5 // halfway, at most
     const x = car.position.x + (car.velocity.x / speed) * ahead
     const z = car.position.z + (car.velocity.y / speed) * ahead
-    this.desired.set(
-      lerp(x, this.interest.x, toInterest) + this.framing.x,
-      0,
-      lerp(z, this.interest.z, toInterest) + this.framing.y - LOOK_NORTH,
-    )
+    // halfway to the point of interest at most, and never so far that the car leaves the view
+    const toX = this.interest.x - x
+    const toZ = this.interestSideways ? 0 : this.interest.z - z
+    const pull = this.interestWeight * Math.min(0.5, this.interestMaxShift / (Math.hypot(toX, toZ) || 1))
+    this.desired.set(x + toX * pull + this.framing.x, 0, z + toZ * pull + this.framing.y - LOOK_NORTH)
     this.focus.x = damp(this.focus.x, this.desired.x, 5, dt)
     this.focus.z = damp(this.focus.z, this.desired.z, 5, dt)
     this.zoom = damp(this.zoom, this.targetZoom, 6, dt)
