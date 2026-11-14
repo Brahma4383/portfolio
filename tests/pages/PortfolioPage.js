@@ -17,6 +17,9 @@ export class PortfolioPage {
     this.explored = page.locator('#explored')
     this.menuButton = page.getByRole('button', { name: 'Jump to a section' })
     this.menu = page.locator('#menu')
+    // phones only; exact, as the start screen's "Prefer a simple page? Open the classic view"
+    // is still fading out (and so still matches) for a moment after Start
+    this.menuClassicButton = page.getByRole('button', { name: 'Open the classic view', exact: true })
     this.carButton = page.getByRole('button', { name: 'Switch car' })
     this.cars = page.locator('#cars')
     this.nightButton = page.locator('#night-button')
@@ -36,6 +39,8 @@ export class PortfolioPage {
     // classic page
     this.classic = page.locator('#classic')
     this.backToIslandButton = this.classic.getByRole('button', { name: 'Back to the island' })
+    this.classicName = this.classic.locator('h1')
+    this.classicRobot = this.classic.locator('.robot')
   }
 
   async open() {

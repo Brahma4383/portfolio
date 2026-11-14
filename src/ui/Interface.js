@@ -119,6 +119,7 @@ export class Interface {
       menuButton: $('menu-button'),
       menu: $('menu'),
       menuList: $('menu-list'),
+      menuClassic: $('menu-classic'),
       carButton: $('car-button'),
       cars: $('cars'),
       carsList: $('cars-list'),
@@ -185,6 +186,10 @@ export class Interface {
     el.start.addEventListener('click', () => this.emit('start'))
     el.introClassic.addEventListener('click', () => this.openClassic())
     el.classicButton.addEventListener('click', () => this.openClassic())
+    el.menuClassic.addEventListener('click', () => {
+      this.toggleMenu(false)
+      this.openClassic()
+    })
     el.panelClose.addEventListener('click', () => this.dismissPanel())
 
     el.menuButton.addEventListener('click', () => this.toggleMenu())

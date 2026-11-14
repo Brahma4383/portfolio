@@ -671,6 +671,15 @@ kbd {
   opacity: 1;
 }
 
+/* Phones only (see the 760px block): the top bar has no room for "Classic view". */
+.menu .menu__classic {
+  display: none;
+  justify-content: center;
+  margin-top: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 600;
+}
+
 /* car picker */
 
 .cars {
@@ -1945,6 +1954,10 @@ img.logoloop__visual {
     width: auto;
   }
 
+  .menu .menu__classic {
+    display: flex;
+  }
+
   .cars__list {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -2419,10 +2432,11 @@ img.logoloop__visual {
     grid-template-columns: 1fr;
   }
 
-  /* on narrow screens he stands above the name instead of beside it */
+  /* on narrow screens he stands under the intro instead of beside it, so a phone's
+     first screen shows the name, roles and resume buttons rather than only him */
   .robot {
     --stage: 300px;
-    order: -1;
+    margin-top: 12px;
   }
 }
 

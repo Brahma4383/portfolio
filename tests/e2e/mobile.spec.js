@@ -21,6 +21,26 @@ test.describe('Phone layout', () => {
     expect(box.width).toBeGreaterThan(viewport.width - 40)
   })
 
+  test('the menu opens the classic view, as the top bar has no room for its button', async ({ portfolio }) => {
+    await portfolio.startEngine()
+    await expect(portfolio.classicButton).toBeHidden()
+    await portfolio.menuButton.click()
+    await portfolio.menuClassicButton.click()
+    await expect(portfolio.classic).toBeVisible()
+    await expect(portfolio.menu).toBeHidden()
+    await portfolio.backToIslandButton.click()
+    await expect(portfolio.hud).toBeVisible()
+  })
+
+  test('the classic page shows my name first, before the 3D character', async ({ portfolio }) => {
+    await portfolio.open()
+    await portfolio.introClassicButton.click()
+    await expect(portfolio.classicName).toBeInViewport()
+    const name = await portfolio.classicName.boundingBox()
+    const robot = await portfolio.classicRobot.boundingBox()
+    expect(name.y).toBeLessThan(robot.y)
+  })
+
   test('dragging the joystick drives the car', async ({ portfolio, page }) => {
     await portfolio.startEngine()
     const zone = await portfolio.joystickZone.boundingBox()

@@ -85,7 +85,7 @@ The tests read their expected data from `src/data/portfolio.js` and `src/world/l
 | `Esc` | Close the panel, menu or classic view |
 | Mouse wheel | Zoom |
 
-On touch screens, drag anywhere on the left half to steer (the car heads toward where you point), and hold **Drift** or **Brake** on the right. The pin button in the top bar jumps straight to any area.
+On touch screens, drag anywhere on the left half to steer (the car heads toward where you point), and hold **Drift** or **Brake** on the right. The pin button in the top bar jumps straight to any area; on phones its menu also has **Open the classic view**, since the top bar has no room for that button.
 
 ## Editing the content
 
