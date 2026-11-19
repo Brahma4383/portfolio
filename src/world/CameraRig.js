@@ -7,6 +7,9 @@ export const OFFSET = new THREE.Vector3(0, 21, 24)
 const MIN_ZOOM = 0.55
 const MAX_ZOOM = 1.6
 const LOOK_NORTH = 4 // aim a little north of the car so more of the world ahead is visible
+// how steeply the camera looks down
+const PITCH_SIN = OFFSET.y / OFFSET.length()
+const PITCH_COS = OFFSET.z / OFFSET.length()
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
 
 export class CameraRig {
@@ -68,6 +71,15 @@ export class CameraRig {
 
   setFraming(x, z) {
     this.framingTarget.set(x, z)
+  }
+
+  // The southward framing that puts a parked car at height `screenY` on the screen
+  // (-1 is the bottom edge, 1 the top) instead of just below the middle. Worked out
+  // from the camera's tilt, so it's exact for any zoom and screen size.
+  framingForScreenY(screenY) {
+    const t = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * screenY
+    const north = (t * this.distance) / (PITCH_SIN - t * PITCH_COS) // metres north of where the camera looks
+    return north + LOOK_NORTH
   }
 
   // While `point` is set the camera looks halfway between the car and it, so both stay

@@ -29,12 +29,23 @@ export class PortfolioPage {
     this.toast = page.locator('#toast')
     this.touchControls = page.locator('.touch')
     this.keyboardHint = page.locator('.hint__keys')
-    this.joystickZone = page.locator('#joystick-zone')
+    // touch screens: the steering wheel (its data-angle is how far it's turned) and the pedals
+    this.wheel = page.locator('#wheel')
+    this.gasPedal = page.getByRole('button', { name: 'Gas', exact: true })
+    this.brakePedal = page.getByRole('button', { name: 'Brake', exact: true })
+    this.driftPedal = page.getByRole('button', { name: 'Drift', exact: true })
+    // phones held upright: the prompt to turn sideways
+    this.rotatePrompt = page.locator('#rotate')
+    this.rotateClassicButton = page.getByRole('button', { name: 'Or read the classic view' })
 
     // info panel
     this.panel = page.locator('#panel')
     this.panelHeading = this.panel.locator('h2')
     this.closePanelButton = page.getByRole('button', { name: 'Close panel' })
+    // phones: the small card an area shows while driving, and the button that folds the panel back into it
+    this.peek = page.locator('#peek')
+    this.peekTitle = this.peek.locator('.peek__title')
+    this.minimisePanelButton = page.getByRole('button', { name: 'Minimise panel' })
 
     // classic page
     this.classic = page.locator('#classic')
@@ -73,6 +84,70 @@ export class PortfolioPage {
     await expect(this.panel).toHaveAttribute('data-trigger', triggerId)
   }
 
+  // Phones: the area shows only its card; the panel itself stays closed.
+  async expectPeekFor(triggerId) {
+    await expect(this.peek).toBeVisible()
+    await expect(this.panel).toHaveAttribute('data-trigger', triggerId)
+    await expect(this.panel).toBeHidden()
+  }
+
+  // Phones: tap the area's card to open its panel.
+  async openPeek(triggerId) {
+    await this.expectPeekFor(triggerId)
+    await this.peek.click()
+    await this.expectPanelFor(triggerId)
+    await expect(this.panel).toHaveClass(/is-open/)
+  }
+
+  // ---------- touch: several fingers at once ----------
+  // Playwright's own touchscreen can only tap, and driving takes two thumbs (one on the
+  // wheel, one on a pedal), so fingers are put down through the Chrome DevTools Protocol.
+  // Each event lists every finger still down, as a real touch screen reports them.
+
+  async sendTouch(type) {
+    this.cdp ??= await this.page.context().newCDPSession(this.page)
+    const touchPoints = [...this.fingers.values()]
+    await this.cdp.send('Input.dispatchTouchEvent', { type, touchPoints })
+  }
+
+  async fingerDown(name, x, y) {
+    this.fingers ??= new Map()
+    this.fingers.set(name, { x, y, id: this.fingers.size + 1 })
+    await this.sendTouch('touchStart')
+  }
+
+  async fingerMove(name, x, y) {
+    Object.assign(this.fingers.get(name), { x, y })
+    await this.sendTouch('touchMove')
+  }
+
+  async liftFingers() {
+    this.fingers?.clear()
+    await this.sendTouch('touchEnd')
+  }
+
+  // Phones: put a thumb on the top of the wheel's rim and turn it `degrees` clockwise
+  // (negative: anticlockwise). It stays there, holding the wheel, until liftFingers().
+  async turnWheel(degrees) {
+    // wait for the wheel to finish gliding in, or its centre is still moving
+    await expect(this.wheel).toHaveCSS('opacity', '1')
+    const box = await this.wheel.boundingBox()
+    const radius = box.width * 0.4
+    const onRim = (angle) => {
+      const radians = ((angle - 90) * Math.PI) / 180
+      return [box.x + box.width / 2 + radius * Math.cos(radians), box.y + box.height / 2 + radius * Math.sin(radians)]
+    }
+    await this.fingerDown('wheel', ...onRim(0))
+    const steps = Math.ceil(Math.abs(degrees) / 5)
+    for (let step = 1; step <= steps; step++) await this.fingerMove('wheel', ...onRim((degrees * step) / steps))
+  }
+
+  // Phones: hold a pedal (this.gasPedal, this.brakePedal or this.driftPedal) down until liftFingers().
+  async pressPedal(pedal) {
+    const box = await pedal.boundingBox()
+    await this.fingerDown(await pedal.textContent(), box.x + box.width / 2, box.y + box.height / 2)
+  }
+
   // Projects panel → "jump to board" button for one project.
   async goToProject(index) {
     await this.goTo('projects')
@@ -83,5 +158,21 @@ export class PortfolioPage {
 
   resumeLink(scope, kind) {
     return scope.locator(`[data-resume="${kind}"]`).first()
+  }
+
+  // A "Copy" button (the phone number). Found by its data, as its text changes when clicked.
+  copyButton(scope) {
+    return scope.locator('[data-copy]').first()
+  }
+
+  // Phones: waits for the car to be on `triggerId` and returns the card's title at that
+  // moment. Checked every frame, so it catches spots the car only drives across.
+  async catchPeekTitle(triggerId) {
+    const title = await this.page.waitForFunction(
+      (id) => document.querySelector('#panel').dataset.trigger === id && document.querySelector('#peek-title').textContent,
+      triggerId,
+      { polling: 'raf', timeout: 15_000 },
+    )
+    return title.jsonValue()
   }
 }

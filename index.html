@@ -77,7 +77,7 @@
           <li><kbd>Shift</kbd> boost</li>
           <li><kbd>N</kbd> night</li>
         </ul>
-        <p class="intro__touch">On a phone? Drag on the left half of the screen to steer.</p>
+        <p class="intro__touch">On a phone? It plays sideways: steer with the wheel, drive with the Gas and Brake pedals.</p>
       </div>
     </section>
 
@@ -132,31 +132,70 @@
       </div>
 
       <aside class="panel" id="panel" aria-live="polite" hidden>
+        <!-- phones only: folds the panel back into its card (#peek) -->
+        <button class="panel__close panel__minimise" id="panel-minimise" type="button" aria-label="Minimise panel" title="Back to driving">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+        </button>
         <button class="panel__close" id="panel-close" type="button" aria-label="Close panel">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
         </button>
         <div class="panel__body" id="panel-body"></div>
       </aside>
 
+      <!-- Phones: while driving, an area only shows this small card; tapping it opens the panel -->
+      <button class="peek" id="peek" type="button" aria-controls="panel" hidden>
+        <span class="peek__text">
+          <span class="peek__eyebrow" id="peek-eyebrow"></span>
+          <span class="peek__title" id="peek-title"></span>
+        </span>
+        <span class="peek__more" aria-hidden="true">
+          Read
+          <svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" /></svg>
+        </span>
+      </button>
+
       <div class="toast" id="toast" role="status"></div>
 
       <p class="hint" id="hint">
         <span class="hint__keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows to drive · <kbd>Space</kbd> drift · <kbd>Shift</kbd> boost · scroll to zoom</span>
-        <span class="hint__touch">Drag on the left to drive · hold Drift or Brake on the right</span>
+        <span class="hint__touch">Turn the wheel to steer&nbsp;· hold Gas to go</span>
       </p>
 
       <canvas class="minimap" id="minimap" role="img" aria-label="Map of the island"></canvas>
       <div class="speedo" aria-hidden="true"><span id="speed">0</span><small>km/h</small></div>
 
+      <!-- Touch screens: a steering wheel for the left thumb, pedals for the right -->
       <div class="touch">
-        <div class="touch__zone" id="joystick-zone"></div>
-        <div class="joystick" id="joystick"><span class="joystick__knob" id="joystick-knob"></span></div>
-        <div class="touch__buttons">
-          <button class="touch__button" id="drift-button" type="button">Drift</button>
-          <button class="touch__button" id="brake-button" type="button">Brake</button>
+        <div class="wheel" id="wheel" aria-hidden="true">
+          <svg class="wheel__rim" id="wheel-rim" viewBox="0 0 100 100">
+            <path class="wheel__spoke-edge" d="M10 50 H32 M68 50 H90 M50 68 V90" />
+            <path class="wheel__spoke" d="M10 50 H32 M68 50 H90 M50 68 V90" />
+            <circle class="wheel__ring" cx="50" cy="50" r="42" />
+            <circle class="wheel__grip" cx="50" cy="50" r="42" />
+            <circle class="wheel__edge" cx="50" cy="50" r="48" />
+            <circle class="wheel__edge" cx="50" cy="50" r="36" />
+            <path class="wheel__mark" d="M50 2.5 V13.5" />
+          </svg>
+          <span class="wheel__hub"><span id="wheel-speed">0</span><small>km/h</small></span>
+        </div>
+        <div class="pedals">
+          <button class="pedal pedal--drift" id="drift-button" type="button">Drift</button>
+          <button class="pedal pedal--brake" id="brake-button" type="button">Brake</button>
+          <button class="pedal pedal--gas" id="gas-button" type="button">Gas</button>
         </div>
       </div>
     </div>
+
+    <!-- Phones drive sideways. Held upright, the island waits behind this. -->
+    <section class="rotate" id="rotate" aria-labelledby="rotate-title">
+      <div class="rotate__card">
+        <span class="rotate__phone" aria-hidden="true"></span>
+        <h2 class="rotate__title" id="rotate-title">Turn your phone sideways</h2>
+        <p class="rotate__text">The island is driven in landscape: the steering wheel on the left, Gas and Brake on the right.</p>
+        <button class="button button--accent" id="rotate-lock" type="button" hidden>Turn it for me</button>
+        <button class="button button--ghost" id="rotate-classic" type="button">Or read the classic view</button>
+      </div>
+    </section>
 
     <!-- The whole portfolio as a normal page; also used when WebGL isn't available -->
     <main class="classic" id="classic" tabindex="-1" hidden></main>

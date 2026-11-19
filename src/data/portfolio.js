@@ -250,6 +250,14 @@ export const contacts = [
     color: '#2a9d8f',
     action: 'View resume',
   },
+  // On the island the phone isn't one of the four square pads: the number stands in
+  // blocks under the CONTACT title, with a pad to park on in front (Zones.buildContact).
+  {
+    id: 'phone',
+    label: 'Phone',
+    value: '+91 90210 24383',
+    href: 'tel:+919021024383',
+    color: '#2f9e5d',
+    action: 'Call me',
+  },
 ]
-
-export const phone = { label: '+91 90210 24383', href: 'tel:+919021024383' }

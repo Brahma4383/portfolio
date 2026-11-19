@@ -21,17 +21,27 @@ const ACTIONS = {
   Escape: { name: 'escape', always: true },
 }
 
-const JOYSTICK_RADIUS = 56
+// The steering wheel turns this far either way (in radians, about 110°) for full lock.
+const WHEEL_LOCK = 1.9
+// How quickly it springs back to the middle once it's let go (per second).
+const WHEEL_RETURN = 9
+// The hub, as a share of the wheel's radius. A thumb there can't say which way it's
+// turning, so the wheel holds still until the thumb is back out on the rim.
+const WHEEL_HUB = 0.25
 
-// Keyboard on desktop; a floating joystick plus two buttons on touch screens.
+// Keyboard on desktop; a steering wheel and pedals on touch screens.
 export class Controls {
-  constructor({ joystickZone, joystick, joystickKnob, driftButton, brakeButton }) {
+  constructor({ wheel, wheelRim, gasButton, brakeButton, driftButton }) {
     this.enabled = false
     this.pressed = new Set()
     this.handlers = {}
-    this.stick = { pointer: null, originX: 0, originY: 0, x: 0, y: 0 }
-    this.touchDrift = false
+    // `angle` is how far the wheel is turned, clockwise on screen; `grip` is where the thumb
+    // holding it was last, as an angle around the wheel's centre (null in the hub)
+    this.wheel = { pointer: null, angle: 0, grip: null, drawn: 0, element: wheel, rim: wheelRim }
+    this.touchGas = false
     this.touchBrake = false
+    this.touchDrift = false
+    this.lastInputTime = performance.now()
     this.input = { throttle: 0, steer: 0, handbrake: false, boost: false }
 
     window.addEventListener('keydown', (event) => this.onKeyDown(event))
@@ -39,11 +49,12 @@ export class Controls {
       this.pressed.delete(event.code)
       if (this.enabled && DRIVING_KEYS.has(event.code)) event.preventDefault()
     })
-    window.addEventListener('blur', () => this.pressed.clear())
+    window.addEventListener('blur', () => this.release())
 
-    this.setupJoystick(joystickZone, joystick, joystickKnob)
-    this.setupHoldButton(driftButton, (down) => (this.touchDrift = down))
-    this.setupHoldButton(brakeButton, (down) => (this.touchBrake = down))
+    this.setupWheel()
+    this.setupPedal(gasButton, (down) => (this.touchGas = down))
+    this.setupPedal(brakeButton, (down) => (this.touchBrake = down))
+    this.setupPedal(driftButton, (down) => (this.touchDrift = down))
   }
 
   on(action, handler) {
@@ -68,64 +79,98 @@ export class Controls {
     }
   }
 
-  setupJoystick(zone, base, knob) {
-    const stick = this.stick
+  // Grab the rim and turn it, like a real wheel: what counts is how far the thumb
+  // goes round the centre, so it can hold the wheel anywhere.
+  setupWheel() {
+    const wheel = this.wheel
+    const { element } = wheel
 
-    zone.addEventListener('pointerdown', (event) => {
-      if (stick.pointer !== null || !this.enabled) return
-      stick.pointer = event.pointerId
-      stick.originX = event.clientX
-      stick.originY = event.clientY
-      zone.setPointerCapture(event.pointerId)
-      base.style.left = `${event.clientX}px`
-      base.style.top = `${event.clientY}px`
-      base.classList.add('is-active')
-      knob.style.transform = 'translate(-50%, -50%)'
+    const gripAt = (event) => {
+      const box = element.getBoundingClientRect()
+      const dx = event.clientX - (box.left + box.width / 2)
+      const dy = event.clientY - (box.top + box.height / 2)
+      return Math.hypot(dx, dy) < (box.width / 2) * WHEEL_HUB ? null : Math.atan2(dy, dx)
+    }
+
+    element.addEventListener('pointerdown', (event) => {
+      if (wheel.pointer !== null || !this.enabled) return
+      event.preventDefault()
+      wheel.pointer = event.pointerId
+      wheel.grip = gripAt(event)
+      element.setPointerCapture(event.pointerId)
+      element.classList.add('is-held')
       this.handlers.drive?.()
     })
 
-    zone.addEventListener('pointermove', (event) => {
-      if (event.pointerId !== stick.pointer) return
-      let dx = event.clientX - stick.originX
-      let dy = event.clientY - stick.originY
-      const length = Math.hypot(dx, dy)
-      if (length > JOYSTICK_RADIUS) {
-        dx *= JOYSTICK_RADIUS / length
-        dy *= JOYSTICK_RADIUS / length
+    element.addEventListener('pointermove', (event) => {
+      if (event.pointerId !== wheel.pointer) return
+      const grip = gripAt(event)
+      if (grip !== null && wheel.grip !== null) {
+        wheel.angle = clamp(wheel.angle + wrapAngle(grip - wheel.grip), -WHEEL_LOCK, WHEEL_LOCK)
       }
-      stick.x = dx / JOYSTICK_RADIUS
-      stick.y = -dy / JOYSTICK_RADIUS
-      knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`
+      wheel.grip = grip
     })
 
-    const release = (event) => {
-      if (event.pointerId !== stick.pointer) return
-      stick.pointer = null
-      stick.x = 0
-      stick.y = 0
-      base.classList.remove('is-active')
+    const letGo = (event) => {
+      if (event.pointerId !== wheel.pointer) return
+      wheel.pointer = null
+      wheel.grip = null
+      element.classList.remove('is-held')
     }
-    zone.addEventListener('pointerup', release)
-    zone.addEventListener('pointercancel', release)
+    element.addEventListener('pointerup', letGo)
+    element.addEventListener('pointercancel', letGo)
+    element.addEventListener('lostpointercapture', letGo)
+    element.addEventListener('contextmenu', (event) => event.preventDefault())
   }
 
-  setupHoldButton(button, set) {
+  // Gas, Brake and Drift work while they're held down.
+  setupPedal(button, set) {
     const down = (event) => {
       event.preventDefault()
+      // so it's let go wherever the finger lifts, even after sliding off the pedal
+      button.setPointerCapture(event.pointerId)
       set(true)
+      button.classList.add('is-down')
       this.handlers.drive?.()
     }
-    const up = () => set(false)
+    const up = () => {
+      set(false)
+      button.classList.remove('is-down')
+    }
     button.addEventListener('pointerdown', down)
     button.addEventListener('pointerup', up)
-    button.addEventListener('pointerleave', up)
     button.addEventListener('pointercancel', up)
+    button.addEventListener('lostpointercapture', up)
     button.addEventListener('contextmenu', (event) => event.preventDefault())
   }
 
-  // Turns the current keys / joystick into driving input for the car.
-  getInput(heading) {
+  // Lets go of everything: keys, pedals and the wheel (the page lost focus, or the game paused).
+  release() {
+    this.pressed.clear()
+    this.touchGas = this.touchBrake = this.touchDrift = false
+    for (const pedal of document.querySelectorAll('.pedal.is-down')) pedal.classList.remove('is-down')
+    const { wheel } = this
+    if (wheel.pointer !== null && wheel.element.hasPointerCapture(wheel.pointer)) wheel.element.releasePointerCapture(wheel.pointer)
+    wheel.pointer = null
+    wheel.grip = null
+    wheel.element.classList.remove('is-held')
+  }
+
+  // Turns the current keys, wheel and pedals into driving input for the car.
+  getInput() {
+    const now = performance.now()
+    const dt = Math.min((now - this.lastInputTime) / 1000, 0.1)
+    this.lastInputTime = now
+
     const input = this.input
+    const { wheel } = this
+    // a wheel that's let go turns itself back to the middle
+    if (wheel.pointer === null && wheel.angle !== 0) {
+      wheel.angle *= Math.exp(-WHEEL_RETURN * dt)
+      if (Math.abs(wheel.angle) < 0.003) wheel.angle = 0
+    }
+    this.drawWheel()
+
     if (!this.enabled) {
       input.throttle = 0
       input.steer = 0
@@ -135,21 +180,23 @@ export class Controls {
     }
 
     const held = (name) => BINDINGS[name].some((code) => this.pressed.has(code))
-    input.throttle = (held('up') ? 1 : 0) - (held('down') ? 1 : 0)
-    input.steer = (held('left') ? 1 : 0) - (held('right') ? 1 : 0)
+    input.throttle = (held('up') || this.touchGas ? 1 : 0) - (held('down') ? 1 : 0)
+    // turning the wheel clockwise steers right, which is negative here
+    input.steer = clamp((held('left') ? 1 : 0) - (held('right') ? 1 : 0) - wheel.angle / WHEEL_LOCK, -1, 1)
     input.handbrake = held('handbrake') || this.touchDrift
     input.boost = held('boost')
-
-    // The joystick points where you want to go on screen (up = north);
-    // the car steers toward that direction.
-    const magnitude = Math.min(1, Math.hypot(this.stick.x, this.stick.y))
-    if (this.stick.pointer !== null && magnitude > 0.18) {
-      const target = Math.atan2(-this.stick.x, this.stick.y)
-      input.throttle = magnitude
-      input.steer = clamp(wrapAngle(target - heading) * 2.2, -1, 1)
-    }
+    // Brake beats Gas, and once the car has stopped it reverses
     if (this.touchBrake) input.throttle = -1
 
     return input
+  }
+
+  drawWheel() {
+    const { wheel } = this
+    if (wheel.drawn === wheel.angle) return
+    wheel.drawn = wheel.angle
+    wheel.rim.style.transform = `rotate(${wheel.angle.toFixed(4)}rad)`
+    // the tests (and anyone curious) can read how far it's turned
+    wheel.element.dataset.angle = String(Math.round((wheel.angle * 180) / Math.PI))
   }
 }

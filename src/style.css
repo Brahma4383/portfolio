@@ -145,6 +145,7 @@ kbd {
 .icon-button:focus-visible,
 .menu button:focus-visible,
 .links a:focus-visible,
+.links button:focus-visible,
 .panel__close:focus-visible {
   outline: 3px solid #ffd166;
   outline-offset: 2px;
@@ -379,6 +380,49 @@ kbd {
   color: var(--muted);
 }
 
+/* a phone held sideways (the way the island is driven): the whole card fits on its
+   short screen, with my name on one line and the two buttons side by side */
+@media (max-height: 540px) and (orientation: landscape) {
+  .intro {
+    padding: max(12px, env(safe-area-inset-top)) var(--gutter) max(12px, env(safe-area-inset-bottom));
+  }
+
+  .intro__card {
+    width: min(640px, 100%);
+  }
+
+  .intro__name {
+    font-size: clamp(1.9rem, 10.5vh, 3rem);
+  }
+
+  .intro__name span {
+    display: inline;
+  }
+
+  .intro__role {
+    margin: 0.5rem 0 1rem;
+    font-size: 0.95rem;
+  }
+
+  .intro__tracks {
+    margin: -0.3rem 0 1rem;
+  }
+
+  .progress {
+    margin-bottom: 0.9rem;
+  }
+
+  .intro__actions {
+    flex-flow: row wrap;
+    justify-content: center;
+  }
+
+  .intro__touch,
+  .intro__keys {
+    margin-top: 0.9rem;
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -413,7 +457,9 @@ kbd {
 .hud__top,
 .minimap,
 .speedo,
-.hint {
+.hint,
+.wheel,
+.pedals {
   opacity: 0;
   transition: opacity var(--slow) var(--ease-out), transform var(--slow) var(--ease-out);
 }
@@ -426,8 +472,13 @@ kbd {
   transform: translate(-18px, 18px);
 }
 
-.speedo {
+.speedo,
+.pedals {
   transform: translate(18px, 18px);
+}
+
+.wheel {
+  transform: translate(-18px, 18px);
 }
 
 .hint {
@@ -436,7 +487,9 @@ kbd {
 
 .hud.is-open .hud__top,
 .hud.is-open .minimap,
-.hud.is-open .speedo {
+.hud.is-open .speedo,
+.hud.is-open .wheel,
+.hud.is-open .pedals {
   opacity: 1;
   transform: none;
 }
@@ -448,7 +501,9 @@ kbd {
 }
 
 .hud.is-open .minimap,
-.hud.is-open .speedo {
+.hud.is-open .speedo,
+.hud.is-open .wheel,
+.hud.is-open .pedals {
   transition-delay: 0.12s;
 }
 
@@ -592,6 +647,11 @@ kbd {
   right: var(--gutter);
   z-index: 5;
   width: 220px;
+  /* a phone held sideways is too short for every item: the list scrolls instead */
+  max-height: calc(100% - max(14px, env(safe-area-inset-top)) - 54px - 12px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   padding: 10px;
   border-radius: var(--radius);
   background: var(--glass);
@@ -866,6 +926,12 @@ kbd {
 
 .panel__close:hover {
   background: rgba(255, 255, 255, 0.16);
+}
+
+/* small screens only (see "Phones: the area card" below) */
+.panel__minimise {
+  display: none;
+  right: 56px;
 }
 
 .panel__actions {
@@ -1151,22 +1217,32 @@ img.logoloop__visual {
   list-style: none;
 }
 
-.links a {
+.links a,
+.links button {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
   min-height: 48px;
   padding: 0 14px;
+  border: 0;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.07);
   color: #fff;
+  font: inherit;
   text-decoration: none;
+  cursor: pointer;
   transition: background-color 0.2s ease;
 }
 
-.links a:hover {
+.links a:hover,
+.links button:hover {
   background: rgba(255, 255, 255, 0.14);
+}
+
+/* "Copy" turns into "Copied ✓" for a moment: wide enough for both */
+.links button.links__aside {
+  min-width: 6.2rem;
 }
 
 .links span {
@@ -1814,77 +1890,195 @@ img.logoloop__visual {
   color: var(--muted);
 }
 
-/* touch controls */
+/* touch controls: a steering wheel under the left thumb, pedals under the right.
+   Sizes come from --wheel and --thumbs, set on .hud for touch screens below. */
 
 .touch {
   display: none;
 }
 
-.touch__zone {
+.wheel {
   position: absolute;
-  left: 0;
-  top: 90px;
-  bottom: 0;
-  width: 55%;
-  touch-action: none;
-}
-
-.joystick {
-  position: absolute;
-  width: 120px;
-  height: 120px;
-  margin: -60px 0 0 -60px;
+  left: calc(var(--gutter) + 4px);
+  bottom: max(14px, env(safe-area-inset-bottom));
+  width: var(--wheel);
+  height: var(--wheel);
   border-radius: 50%;
-  background: rgba(22, 24, 38, 0.35);
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
-}
-
-.joystick.is-active {
-  opacity: 1;
-}
-
-.joystick__knob {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  transform: translate(-50%, -50%);
-}
-
-.touch__buttons {
-  position: absolute;
-  right: var(--gutter);
-  bottom: calc(max(18px, env(safe-area-inset-bottom)) + 96px);
-  display: flex;
-  gap: 12px;
-}
-
-.touch__button {
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.55);
-  background: var(--glass);
-  color: #fff;
-  font: 700 0.85rem/1 var(--font-body);
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.touch__button:active {
-  background: var(--coral);
+/* the part that turns (Controls.drawWheel); the hub with the speed stays upright */
+.wheel__rim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 14px rgba(10, 12, 24, 0.35));
+}
+
+.wheel__ring {
+  stroke: rgba(22, 24, 38, 0.78);
+  stroke-width: 12;
+}
+
+/* a leather-like grip all the way round */
+.wheel__grip {
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 8;
+  stroke-dasharray: 1.4 4.2;
+}
+
+.wheel__edge {
+  stroke: rgba(255, 255, 255, 0.8);
+  stroke-width: 1.6;
+  transition: stroke var(--fast) ease;
+}
+
+.wheel__spoke-edge {
+  stroke: rgba(255, 255, 255, 0.8);
+  stroke-width: 10.5;
+}
+
+.wheel__spoke {
+  stroke: rgba(22, 24, 38, 0.9);
+  stroke-width: 7.5;
+}
+
+/* the stripe at the top, so it's easy to see how far the wheel is turned */
+.wheel__mark {
+  stroke: var(--coral);
+  stroke-width: 6;
+}
+
+.wheel__hub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  width: 42%;
+  height: 42%;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  background: var(--glass);
+  color: #fff;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: border-color var(--fast) ease;
+}
+
+.wheel__hub span {
+  font: 700 1.15rem/1 var(--font-head);
+  font-variant-numeric: tabular-nums;
+}
+
+.wheel__hub small {
+  font: 700 0.5rem/1.3 var(--font-body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.wheel.is-held .wheel__edge {
+  stroke: #fff;
+}
+
+.wheel.is-held .wheel__hub {
+  border-color: var(--coral);
+}
+
+.pedals {
+  position: absolute;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+/* a pedal: ridged for grip, and it tips forward while it's pressed */
+.pedal {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 62px;
+  padding: 0 0 10px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: 14px 14px 18px 18px;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 8px, rgba(255, 255, 255, 0.16) 8px 11px) center 12px / calc(100% - 22px) calc(100% - 46px) no-repeat,
+    var(--glass);
+  box-shadow: 0 10px 22px rgba(10, 12, 24, 0.3), inset 0 -4px 0 rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font: 700 0.72rem/1 var(--font-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform-origin: 50% 100%;
+  transition: transform 0.08s ease, background-color var(--fast) ease, border-color var(--fast) ease;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pedal--gas {
+  --pressed: #3fb46a;
+  height: calc(var(--wheel) * 0.74);
+}
+
+.pedal--brake {
+  --pressed: var(--coral);
+  width: 70px;
+  height: calc(var(--wheel) * 0.56);
+}
+
+.pedal--drift {
+  --pressed: #2b8fbd;
+  align-items: center;
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--glass);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.pedal.is-down {
+  background-color: var(--pressed);
+  border-color: #fff;
+  transform: perspective(240px) rotateX(18deg) scale(0.97);
+}
+
+.pedal--drift.is-down {
+  transform: scale(0.92);
 }
 
 @media (pointer: coarse) {
+  .hud {
+    --wheel: clamp(120px, 40vh, 170px);
+    /* room taken by the wheel or the pedals, whichever is wider, on each side of the bottom */
+    --thumbs: max(var(--wheel), 212px);
+  }
+
   .touch {
     display: block;
+  }
+
+  /* between the wheel and the pedals */
+  .hint {
+    max-width: calc(100% - 2 * (var(--gutter) + var(--thumbs) + 12px));
+    border-radius: 16px;
   }
 
   .hint__keys,
@@ -1935,16 +2129,6 @@ img.logoloop__visual {
     border-radius: 16px;
   }
 
-  .panel {
-    top: auto;
-    bottom: max(12px, env(safe-area-inset-bottom));
-    left: var(--gutter);
-    right: var(--gutter);
-    width: auto;
-    max-height: 48%;
-    transform: translateY(24px);
-  }
-
   .panel__body h2 {
     font-size: 1.35rem;
   }
@@ -1967,6 +2151,298 @@ img.logoloop__visual {
   .minimap {
     width: 120px;
     height: 120px;
+  }
+}
+
+/* ---------- Phones: the area card ----------
+   On small screens an area first shows only this card, at the top beside the
+   minimap, so the car and the thumbs stay clear while driving. Tapping it opens
+   the panel; driving folds the panel back into the card (Interface.showPanel).
+   The media queries here are repeated in Interface.js: keep them in step. */
+
+.peek {
+  position: absolute;
+  top: calc(max(14px, env(safe-area-inset-top)) + 62px);
+  left: var(--gutter);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(360px, calc(100% - 2 * var(--gutter)));
+  min-height: 60px;
+  padding: 10px 10px 10px 18px;
+  border: 1px solid var(--glass-line);
+  border-radius: 16px;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 14px 34px rgba(10, 12, 24, 0.3);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  opacity: 0;
+  transform: translateY(-10px) scale(0.98);
+  transition: opacity var(--fast) ease, transform var(--base) var(--ease-out);
+}
+
+/* the area's colour down the left edge, like the panel's top edge */
+.peek::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--accent, var(--coral));
+}
+
+.peek.is-open {
+  opacity: 1;
+  transform: none;
+}
+
+.peek.is-open:active {
+  transform: scale(0.98);
+}
+
+.peek.is-closing {
+  transition: opacity var(--fast) var(--ease-in), transform var(--fast) var(--ease-in);
+}
+
+.peek:focus-visible {
+  outline: 3px solid #ffd166;
+  outline-offset: 2px;
+}
+
+.peek__text {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.peek__eyebrow {
+  overflow: hidden;
+  font: 700 0.66rem/1.2 var(--font-body);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--accent, var(--coral));
+}
+
+/* up to two lines, so longer titles still fit beside the minimap */
+.peek__title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font: 600 1rem/1.2 var(--font-head);
+  color: #fff;
+}
+
+.peek__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  height: 36px;
+  padding: 0 10px 0 14px;
+  border-radius: 999px;
+  background: var(--accent, var(--coral));
+  color: #fff;
+  font: 700 0.82rem/1 var(--font-body);
+}
+
+.peek__more svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* touch screens have the minimap top right: the card stops short of it */
+@media (pointer: coarse) {
+  .peek {
+    width: min(360px, calc(100% - 2 * var(--gutter) - 112px - 10px));
+  }
+}
+
+/* no minimap up there with a mouse: the card is full width, so the toasts move below it */
+@media (pointer: fine) {
+  .peek:not([hidden]) ~ .toast {
+    top: calc(max(14px, env(safe-area-inset-top)) + 134px);
+  }
+}
+
+@media (max-width: 760px), (pointer: coarse) and (max-height: 540px) {
+  .panel__minimise {
+    display: grid;
+  }
+
+  .panel__body .eyebrow {
+    padding-right: 84px;
+  }
+}
+
+/* held sideways (or a short, narrow window): the open panel runs down the right side */
+@media (max-width: 760px) and (orientation: landscape), (pointer: coarse) and (max-height: 540px) {
+  .panel {
+    width: min(380px, 50%);
+    max-height: calc(100% - max(14px, env(safe-area-inset-top)) - 62px - max(12px, env(safe-area-inset-bottom)));
+  }
+}
+
+/* a phone held sideways: the hint and toasts sit at the bottom between the wheel and
+   the pedals, as the middle of the screen is the car */
+@media (pointer: coarse) and (max-height: 540px) {
+  .hint,
+  .toast {
+    max-width: calc(100% - 2 * (var(--gutter) + var(--thumbs) + 12px));
+  }
+
+  .hint {
+    bottom: max(22px, env(safe-area-inset-bottom));
+  }
+
+  .toast {
+    top: auto;
+    bottom: calc(max(22px, env(safe-area-inset-bottom)) + 66px);
+    border-radius: 16px;
+  }
+}
+
+/* ---------- Phones held upright ----------
+   The island is driven sideways, so once the engine is running a phone held upright
+   gets this prompt to turn it (the world pauses behind it: Interface.mustRotate).
+   The query is repeated in Landscape.js: keep them in step. */
+
+.rotate {
+  display: none;
+}
+
+@media (pointer: coarse) and (max-width: 760px) and (orientation: portrait) {
+  .hud:not([hidden]) ~ .rotate {
+    display: grid;
+  }
+}
+
+.rotate {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  place-items: center;
+  padding: max(24px, env(safe-area-inset-top)) var(--gutter) max(24px, env(safe-area-inset-bottom));
+  background: rgba(20, 22, 38, 0.84);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  text-align: center;
+  animation: rotate-in var(--base) var(--ease-out);
+}
+
+.rotate__card {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  width: min(320px, 100%);
+}
+
+/* a phone turning onto its side */
+.rotate__phone {
+  position: relative;
+  width: 54px;
+  height: 92px;
+  margin: 14px 0 18px;
+  border: 3px solid #fff;
+  border-radius: 12px;
+  animation: turn-sideways 2.6s var(--ease-in-out) infinite;
+}
+
+.rotate__phone::before {
+  content: '';
+  position: absolute;
+  inset: 7px 5px 15px;
+  border-radius: 4px;
+  background: linear-gradient(160deg, #3f9b5a, #2b8fbd);
+}
+
+.rotate__phone::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: #fff;
+  transform: translateX(-50%);
+}
+
+.rotate__title {
+  margin: 0;
+  font: 700 1.5rem/1.15 var(--font-head);
+  color: #fff;
+}
+
+.rotate__text {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.rotate .button {
+  width: 100%;
+}
+
+@keyframes rotate-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes turn-sideways {
+  0%,
+  18% {
+    transform: rotate(0deg);
+  }
+  48%,
+  78% {
+    transform: rotate(-90deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* held upright: the open panel is a bottom sheet, and the camera lifts the car above it */
+@media (max-width: 760px) and (orientation: portrait) {
+  .panel {
+    top: auto;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: var(--gutter);
+    right: var(--gutter);
+    width: auto;
+    max-height: 60%;
+    transform: translateY(24px);
+  }
+}
+
+/* keyboard-only tips (like "press Enter") give way to touch ones on phones */
+.for-touch {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .for-keys {
+    display: none;
+  }
+
+  .for-touch {
+    display: revert;
   }
 }
 
@@ -2573,13 +3049,15 @@ img.logoloop__visual {
   color: var(--coral-deep);
 }
 
-.links--light a {
+.links--light a,
+.links--light button {
   background: #fff;
   border: 1px solid rgba(43, 45, 66, 0.08);
   color: var(--ink);
 }
 
-.links--light a:hover {
+.links--light a:hover,
+.links--light button:hover {
   background: var(--paper-deep);
 }
 
@@ -2789,5 +3267,10 @@ img.logoloop__visual {
   .classic__section {
     opacity: 1;
     transform: none;
+  }
+
+  /* the phone in the prompt to turn sideways is shown already turned */
+  .rotate__phone {
+    transform: rotate(-90deg);
   }
 }

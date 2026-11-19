@@ -156,7 +156,7 @@ export class Experience {
   setPaused(paused) {
     this.paused = paused
     this.controls.enabled = !paused && this.driving
-    this.controls.pressed.clear()
+    this.controls.release()
     // the bug radar runs its own animation loop; stop it with the world
     this.bugRadar?.radar.set({ paused })
   }
@@ -256,7 +256,7 @@ export class Experience {
     const dt = Math.min(this.timer.getDelta(), 1 / 20)
     const elapsed = this.timer.getElapsed()
 
-    const input = this.controls.getInput(this.car.heading)
+    const input = this.controls.getInput()
     const bump = this.car.update(dt, input)
     this.physics.step(dt)
 
@@ -333,17 +333,23 @@ export class Experience {
     if (host && this.bugRadar?.host === host) this.bugRadar.update(this.zones.bugHunt, this.car)
   }
 
-  // Slide the view so the car isn't hidden behind the info panel:
-  // sideways when the panel sits on the right, upwards when it's a bottom sheet.
+  // Slide the view so the car isn't hidden behind the info panel: sideways when the
+  // panel sits on the right, and up into the gap between the top bar and the panel
+  // when it's a bottom sheet.
   updateFraming() {
     const panel = this.ui.panelSize
     if (!panel) {
       this.cameraRig.setFraming(0, 0)
       return
     }
-    const metresPerPixel = (2 * this.cameraRig.distance * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2))) / window.innerHeight
-    if (panel.bottomSheet) this.cameraRig.setFraming(0, (panel.height / 2) * metresPerPixel * 1.3)
-    else this.cameraRig.setFraming((panel.width / 2) * metresPerPixel, 0)
+    const height = window.innerHeight
+    if (panel.bottomSheet) {
+      const middle = (panel.top + height - panel.height) / 2 // in pixels from the top
+      this.cameraRig.setFraming(0, this.cameraRig.framingForScreenY(1 - (2 * middle) / height))
+    } else {
+      const metresPerPixel = (2 * this.cameraRig.distance * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2))) / height
+      this.cameraRig.setFraming((panel.width / 2) * metresPerPixel, 0)
+    }
   }
 
   // If the first few seconds of driving run slowly, drop to a lighter setting.

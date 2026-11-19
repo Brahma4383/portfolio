@@ -1,13 +1,13 @@
 import { GARAGE, ZONES } from '../world/layout.js'
 import { cars, carById } from '../data/cars.js'
 import { EMOTES } from '../world/Stormtrooper.js'
+import { UPRIGHT_PHONE, canLock } from './Landscape.js'
 import {
   certifications,
   contacts,
   development,
   education,
   experience,
-  phone,
   profile,
   projects,
   resume,
@@ -35,6 +35,14 @@ const ROBOT_REQUESTS = [
 
 const NEW_TAB = 'target="_blank" rel="noopener noreferrer"'
 const FIRST_HINT = 'Drive into an area to read about it'
+
+// Phones and other small screens. A full panel there would cover half the island and
+// the car with it, so while driving an area only shows a small card (#peek) at the top;
+// the panel opens when the card is tapped and folds back into it as soon as the car
+// moves again. On these screens the open panel is a bottom sheet held upright, or a
+// side panel held sideways. Both queries are repeated in style.css: keep them in step.
+const COMPACT = window.matchMedia('(max-width: 760px), (pointer: coarse) and (max-height: 540px)')
+const BOTTOM_SHEET = window.matchMedia('(max-width: 760px) and (orientation: portrait)')
 const linkAttrs = (href) => (href.startsWith('mailto:') || href.startsWith('tel:') ? '' : NEW_TAB)
 
 // Two ways to get the resume: open it in the browser, or save the PDF.
@@ -42,18 +50,26 @@ const resumeButtons = (viewClass = 'button--accent', downloadClass = 'button--qu
   <a class="button ${viewClass}" href="${resume.file}" ${NEW_TAB} data-resume="view">View resume</a>
   <a class="button ${downloadClass}" href="${resume.file}" download="${resume.fileName}" data-resume="download">Download PDF</a>`
 
-// Contact rows; the resume row gets its own Download button next to it.
+
+// Copies `data-copy` to the clipboard (see Interface.copy).
+const copyButton = (text, label, className) =>
+  `<button type="button" class="${className}" data-copy="${escapeHtml(text)}" aria-live="polite">${label}</button>`
+
+// Contact rows; the resume row gets its own Download button next to it, and the
+// phone row a Copy button (a desktop can't do much with a tel: link).
 const contactRows = () =>
   contacts
-    .map((c) =>
-      c.id === 'resume'
-        ? `<li class="links__row">
+    .map((c) => {
+      if (c.id === 'resume') {
+        return `<li class="links__row">
             <a href="${resume.file}" ${NEW_TAB} data-resume="view"><strong>Resume</strong><span>View PDF</span></a>
             <a class="links__aside" href="${resume.file}" download="${resume.fileName}" data-resume="download">Download</a>
           </li>`
-        : `<li><a href="${c.href}" ${linkAttrs(c.href)}><strong>${escapeHtml(c.label)}</strong><span>${escapeHtml(c.value)}</span></a></li>`,
-    )
-    .join('') + `<li><a href="${phone.href}"><strong>Phone</strong><span>${escapeHtml(phone.label)}</span></a></li>`
+      }
+      const link = `<a href="${c.href}" ${linkAttrs(c.href)}><strong>${escapeHtml(c.label)}</strong><span>${escapeHtml(c.value)}</span></a>`
+      return c.id === 'phone' ? `<li class="links__row">${link}${copyButton(c.value, 'Copy', 'links__aside')}</li>` : `<li>${link}</li>`
+    })
+    .join('')
 
 // A project told in two steps: how it was built, then how it was tested.
 const projectPhases = (project) => `
@@ -127,17 +143,28 @@ export class Interface {
       night: $('night-button'),
       sound: $('sound-button'),
       classicButton: $('classic-button'),
+      hudTop: document.querySelector('.hud__top'),
       panel: $('panel'),
       panelBody: $('panel-body'),
       panelClose: $('panel-close'),
+      panelMinimise: $('panel-minimise'),
+      peek: $('peek'),
+      peekEyebrow: $('peek-eyebrow'),
+      peekTitle: $('peek-title'),
       toast: $('toast'),
       hint: $('hint'),
       speed: $('speed'),
+      wheelSpeed: $('wheel-speed'),
+      rotate: $('rotate'),
+      rotateLock: $('rotate-lock'),
+      rotateClassic: $('rotate-classic'),
       classic: $('classic'),
     }
     this.handlers = {}
     this.trigger = null
     this.dismissed = null
+    this.expanded = false // the whole panel is showing, not just its card (always, on big screens)
+    this.expandOnArrival = null // a board picked from an open panel opens in full
     this.bugRadarHost = null // the bug radar's block, while the Test Lab panel is open
     this.visited = new Set()
     this.webgl = true
@@ -191,7 +218,25 @@ export class Interface {
       this.toggleMenu(false)
       this.openClassic()
     })
+    // phones held upright: the prompt to turn sideways can do it for you (Android), or offer the classic view
+    el.rotateLock.hidden = !canLock()
+    el.rotateLock.addEventListener('click', () => this.emit('landscape'))
+    el.rotateClassic.addEventListener('click', () => this.openClassic())
+    UPRIGHT_PHONE.addEventListener('change', () => this.emit('rotate'))
     el.panelClose.addEventListener('click', () => this.dismissPanel())
+    el.panelMinimise.addEventListener('click', () => this.collapsePanel())
+    el.peek.addEventListener('click', () => {
+      el.peek.blur()
+      this.expandPanel()
+    })
+    // tapping the island above an open panel goes back to driving, too
+    document.querySelector('canvas.webgl')?.addEventListener('pointerdown', () => this.collapsePanel())
+    // e.g. a window made narrower: the open area switches between panel and card
+    COMPACT.addEventListener('change', () => {
+      if (!this.trigger || this.dismissed === this.trigger.id) return
+      this.showPanel(!COMPACT.matches)
+      this.emit('panel')
+    })
 
     el.menuButton.addEventListener('click', () => this.toggleMenu())
     el.carButton.addEventListener('click', () => this.toggleCars())
@@ -216,6 +261,7 @@ export class Interface {
       const emote = event.target.closest('[data-emote]')
       if (jump) {
         jump.blur()
+        this.expandOnArrival = jump.dataset.jump
         this.emit('jump', jump.dataset.jump)
       } else if (emote) {
         emote.blur()
@@ -236,6 +282,29 @@ export class Interface {
     el.classic.addEventListener('click', (event) => {
       if (event.target.closest('[data-close-classic]')) this.closeClassic()
     })
+
+    // "Copy" buttons (the phone number), in the panels and on the classic page
+    document.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-copy]')
+      if (!button) return
+      if (el.panel.contains(button)) button.blur() // Space and Enter go back to driving
+      this.copy(button)
+    })
+  }
+
+  // Copies a button's `data-copy` text, then says so on the button for a moment.
+  copy(button) {
+    button.dataset.label ??= button.textContent.trim()
+    const say = (text) => {
+      button.textContent = text
+      clearTimeout(button._copyTimer)
+      button._copyTimer = setTimeout(() => (button.textContent = button.dataset.label), 1800)
+    }
+    if (!navigator.clipboard) return say('Couldn’t copy')
+    navigator.clipboard.writeText(button.dataset.copy).then(
+      () => say('Copied ✓'),
+      () => say('Couldn’t copy'),
+    )
   }
 
   // ---------- start screen ----------
@@ -349,7 +418,16 @@ export class Interface {
 
   setSpeed(kmh) {
     const value = String(Math.round(kmh))
-    if (this.el.speed.textContent !== value) this.el.speed.textContent = value
+    if (this.el.speed.textContent === value) return
+    this.el.speed.textContent = value
+    // touch screens show it in the middle of the steering wheel
+    this.el.wheelSpeed.textContent = value
+  }
+
+  // A phone held upright once the engine is running: the island waits behind the
+  // prompt to turn it sideways (shown by style.css), so the game is paused meanwhile.
+  get mustRotate() {
+    return UPRIGHT_PHONE.matches && !this.el.hud.hidden
   }
 
   hideHint() {
@@ -390,22 +468,61 @@ export class Interface {
     if (this.el.toast.textContent === FIRST_HINT) this.el.toast.classList.remove('is-visible')
     if (this.dismissed === trigger.id) return false
 
+    const { panel, panelBody, peek } = this.el
     const zoneId = { zone: trigger.id, project: 'projects', contact: 'contact', car: 'garage', garage: 'garage' }[trigger.kind]
-    this.el.panel.style.setProperty('--accent', zoneColor[zoneId])
-    this.el.panel.dataset.trigger = trigger.id
-    this.el.panelBody.innerHTML = this.panelContent(trigger)
-    this.el.panelBody.scrollTop = 0
-    // the Test Lab's bug radar; the 3D world fills it in (Experience.updateBugRadar())
-    this.bugRadarHost = this.el.panelBody.querySelector('[data-bug-radar]')
+    panel.style.setProperty('--accent', zoneColor[zoneId])
+    peek.style.setProperty('--accent', zoneColor[zoneId])
+    panel.dataset.trigger = trigger.id
+    panelBody.innerHTML = this.panelContent(trigger)
+    panelBody.scrollTop = 0
     // each top-level block of the panel rises in a beat after the one before
-    ;[...this.el.panelBody.children].forEach((child, i) => child.style.setProperty('--i', i))
-    this.reveal(this.el.panel)
+    ;[...panelBody.children].forEach((child, i) => child.style.setProperty('--i', i))
+    // the card says what the panel is about: its eyebrow and heading
+    this.el.peekEyebrow.textContent = panelBody.querySelector('.eyebrow')?.textContent ?? ''
+    this.el.peekTitle.textContent = panelBody.querySelector('h2')?.textContent ?? ''
+
+    const expand = !COMPACT.matches || this.expandOnArrival === trigger.id
+    this.expandOnArrival = null
+    this.showPanel(expand)
+    return true
+  }
+
+  // Shows the open area's whole panel, or (small screens, while driving) just its card.
+  showPanel(full) {
+    const { panel, peek } = this.el
+    this.expanded = full
+    if (full) {
+      this.conceal(peek, 200)
+      this.reveal(panel)
+    } else {
+      this.conceal(panel, 320)
+      this.reveal(peek)
+    }
+    // the Test Lab's bug radar, while it can be seen; the 3D world fills it in (Experience.updateBugRadar())
+    this.bugRadarHost = full ? this.el.panelBody.querySelector('[data-bug-radar]') : null
+  }
+
+  // Small screens: the card was tapped, so open the whole panel.
+  expandPanel() {
+    if (!this.trigger || this.expanded || this.dismissed === this.trigger.id) return
+    this.showPanel(true)
+    this.emit('panel')
+  }
+
+  // Small screens: back to driving, with the panel folded into its card again.
+  // Returns false when there was nothing to fold.
+  collapsePanel() {
+    if (!COMPACT.matches || !this.expanded || !this.trigger || this.dismissed === this.trigger.id) return false
+    this.showPanel(false)
+    this.emit('panel')
     return true
   }
 
   hidePanel() {
+    this.expanded = false
     this.bugRadarHost = null
     this.conceal(this.el.panel, 320)
+    this.conceal(this.el.peek, 200)
   }
 
   dismissPanel() {
@@ -414,11 +531,17 @@ export class Interface {
     this.emit('panel')
   }
 
-  // Size of the open info panel in pixels, or null when it's closed.
+  // Size of the open info panel in pixels, or null when it's closed (or closing), plus
+  // where the top bar ends, as the view between the two is what's left for the car.
   get panelSize() {
-    const { panel } = this.el
-    if (panel.hidden) return null
-    return { width: panel.offsetWidth + 16, height: panel.offsetHeight + 12, bottomSheet: window.innerWidth <= 760 }
+    const { panel, hudTop } = this.el
+    if (panel.hidden || panel.classList.contains('is-closing')) return null
+    return {
+      width: panel.offsetWidth + 16,
+      height: panel.offsetHeight + 12,
+      top: hudTop.getBoundingClientRect().bottom,
+      bottomSheet: BOTTOM_SHEET.matches,
+    }
   }
 
   // ---------- the Stormtrooper in the About area ----------
@@ -452,7 +575,8 @@ export class Interface {
         <h3 class="section-label">Make the Stormtrooper move</h3>
         ${group('Moves', EMOTES.filter((emote) => !emote.trick))}
         ${group('Tricks', EMOTES.filter((emote) => emote.trick), 'emotes__grid--tricks')}
-        <p class="panel__note">He waves when you arrive, jumps when you honk with <kbd>H</kbd> and dances when you drive away.</p>
+        <p class="panel__note for-keys">He waves when you arrive, jumps when you honk with <kbd>H</kbd> and dances when you drive away.</p>
+        <p class="panel__note for-touch">He waves when you arrive and dances when you drive away.</p>
       </div>`
   }
 
@@ -467,7 +591,8 @@ export class Interface {
   openActiveLink() {
     const href = this.activeLink
     if (!href) return
-    if (href.startsWith('mailto:')) window.location.href = href
+    // email and phone links hand over to an app instead of opening a tab
+    if (href.startsWith('mailto:') || href.startsWith('tel:')) window.location.href = href
     else window.open(href, '_blank', 'noopener')
   }
 
@@ -484,7 +609,7 @@ export class Interface {
       <h2>Pick a car</h2>
       <p>Nine cars, one board each. Park on the pad in front of a board and you're driving that car. They all handle the same; only the looks change.</p>
       <ol class="list">${cars.map((car) => `<li><strong>${escapeHtml(car.name)}</strong> — ${escapeHtml(car.tagline)}</li>`).join('')}</ol>
-      <p class="panel__note">In a hurry? The car button in the top bar (or <kbd>C</kbd>) switches from anywhere.</p>`
+      <p class="panel__note">In a hurry? The car button in the top bar<span class="for-keys"> (or <kbd>C</kbd>)</span> switches from anywhere.</p>`
   }
 
   carPanel(id) {
@@ -563,7 +688,7 @@ export class Interface {
       ${projectPhases(project)}
       <div class="panel__actions">
         <a class="button button--accent" href="${project.link}" ${NEW_TAB}>See my GitHub ↗</a>
-        <span class="panel__key"><kbd>Enter</kbd> to open</span>
+        <span class="panel__key for-keys"><kbd>Enter</kbd> to open</span>
       </div>`
   }
 
@@ -598,7 +723,9 @@ export class Interface {
     return `
       <p class="eyebrow">Contact</p>
       <h2>Let’s talk</h2>
-      <p>${escapeHtml(profile.availability)} Park on a pad and press <kbd>Enter</kbd>, or use the links below.</p>
+      <p>${escapeHtml(profile.availability)}
+        <span class="for-keys">Park on a pad and press <kbd>Enter</kbd>, or use the links below.</span>
+        <span class="for-touch">Park on a pad, or tap a link below.</span></p>
       <ul class="links">${contactRows()}</ul>`
   }
 
@@ -610,7 +737,19 @@ export class Interface {
         <h2>Resume</h2>
         <p class="panel__sub">One page, PDF. Open it in the browser or save a copy.</p>
         <div class="panel__actions">${resumeButtons()}</div>
-        <p class="panel__key"><kbd>Enter</kbd> opens the viewer</p>`
+        <p class="panel__key for-keys"><kbd>Enter</kbd> opens the viewer</p>`
+    }
+    // the number itself is the heading, so a phone's card (#peek) shows it too
+    if (contact.id === 'phone') {
+      return `
+        <p class="eyebrow">Contact · ${escapeHtml(contact.label)}</p>
+        <h2>${escapeHtml(contact.value)}</h2>
+        <p class="panel__sub">Call me, or copy the number for later.</p>
+        <div class="panel__actions">
+          <a class="button button--accent" href="${contact.href}">${escapeHtml(contact.action)}</a>
+          ${copyButton(contact.value, 'Copy number', 'button button--quiet')}
+          <span class="panel__key for-keys"><kbd>Enter</kbd> to call</span>
+        </div>`
     }
     return `
       <p class="eyebrow">Contact</p>
@@ -618,7 +757,7 @@ export class Interface {
       <p class="panel__sub">${escapeHtml(contact.value)}</p>
       <div class="panel__actions">
         <a class="button button--accent" href="${contact.href}" ${linkAttrs(contact.href)}>${escapeHtml(contact.action)}</a>
-        <span class="panel__key"><kbd>Enter</kbd> to open</span>
+        <span class="panel__key for-keys"><kbd>Enter</kbd> to open</span>
       </div>`
   }
 
@@ -696,7 +835,8 @@ export class Interface {
 
   renderClassic() {
     const job = experience[0]
-    const others = contacts.filter((c) => c.id !== 'resume')
+    // "Find me online": the resume has its own buttons and the phone is in Contact
+    const others = contacts.filter((c) => c.id !== 'resume' && c.id !== 'phone')
     this.el.classic.innerHTML = `
       <div class="classic__bar">
         <span class="classic__brand"><span class="brand__mark">BS</span>${escapeHtml(profile.name)}</span>

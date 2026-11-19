@@ -413,6 +413,76 @@ export function createPadTexture({ id, label, value, color }) {
   return toTexture(canvas)
 }
 
+// A mobile phone with two ringing waves, centred on the origin and about `size` across.
+function drawRingingPhone(ctx, size) {
+  const w = size * 0.5
+  const h = size * 0.84
+  ctx.save()
+  ctx.translate(-size * 0.1, 0)
+  ctx.lineWidth = size * 0.1
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.roundRect(-w / 2, -h / 2, w, h, size * 0.11)
+  ctx.stroke()
+  ctx.lineWidth = size * 0.065
+  ctx.beginPath()
+  ctx.moveTo(-size * 0.07, -h / 2 + size * 0.15)
+  ctx.lineTo(size * 0.07, -h / 2 + size * 0.15)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.arc(0, h / 2 - size * 0.15, size * 0.05, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
+  ctx.lineWidth = size * 0.075
+  ctx.lineCap = 'round'
+  for (const r of [size * 0.18, size * 0.33]) {
+    ctx.beginPath()
+    ctx.arc(size * 0.2, -size * 0.12, r, -Math.PI / 2.6, Math.PI / 9)
+    ctx.stroke()
+  }
+}
+
+// The pad in front of the phone number in the Contact area: a ringing phone in a
+// white circle and what to do, the way the project pads say PARK HERE.
+export function createCallPadTexture({ text, color, aspect }) {
+  const width = 1024
+  const height = Math.round(width / aspect)
+  const { canvas, ctx } = makeCanvas(width, height)
+  ctx.fillStyle = color
+  ctx.fillRect(0, 0, width, height)
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)'
+  ctx.lineWidth = 9
+  ctx.strokeRect(16, 16, width - 32, height - 32)
+
+  // the icon and the text are centred together
+  const badge = Math.round(height * 0.56)
+  const gap = 30
+  ctx.letterSpacing = '6px'
+  fitFont(ctx, text, { size: 76, weight: 700, family: HEADING_FONT, maxWidth: width - badge - gap - 110 })
+  const left = (width - (badge + gap + ctx.measureText(text).width)) / 2
+  const middle = height / 2
+
+  ctx.save()
+  ctx.translate(left + badge / 2, middle)
+  ctx.fillStyle = '#ffffff'
+  ctx.beginPath()
+  ctx.arc(0, 0, badge / 2, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = color
+  ctx.strokeStyle = color
+  drawRingingPhone(ctx, badge * 0.62)
+  ctx.restore()
+
+  ctx.fillStyle = '#ffffff'
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(text, left + badge + gap, middle + 4)
+  ctx.letterSpacing = '0px'
+
+  return toTexture(canvas)
+}
+
 // Front of the office building. Returns a colour map and an emissive map where
 // only the windows are bright, so they light up at night.
 export function createFacadeTextures({ company, line }) {

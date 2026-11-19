@@ -9,6 +9,7 @@ import {
   createDecalTexture,
   createFacadeTextures,
   createKeyTexture,
+  createCallPadTexture,
   createPadTexture,
   createProjectBoardTexture,
   createSignTexture,
@@ -31,6 +32,9 @@ const BOARD_TILT = THREE.MathUtils.degToRad(62)
 // squarely and their text isn't squashed.
 const CARD_TILT = THREE.MathUtils.degToRad(45)
 const TITLE_PIXEL = 0.42
+// the phone number under the Contact title: smaller blocks, so its 15 characters
+// fit between the plaza's edges (22 m)
+const PHONE_PIXEL = 0.25
 
 const STONE = '#efe6d2'
 
@@ -439,14 +443,27 @@ export class Zones {
 
   buildContact() {
     const z = zone.contact
-    this.title('CONTACT', z.x, z.z - 12, z.color)
+    this.title('CONTACT', z.x, z.z - 14.5, z.color)
 
-    // The first row sits on the road's line, so driving straight in lands on a pad.
+    // The links sit in a 2×2 grid whose first row is on the road's line, so driving
+    // straight in lands on a pad. Above them, under the title, the phone number stands
+    // in the same blocks as the title (as wide as the grid), with a pad in front of it
+    // to park on, like a project board's.
+    const links = contacts.filter((contact) => contact.id !== 'phone')
     contacts.forEach((contact, i) => {
-      const x = z.x + (i % 2 === 0 ? -7 : 7)
-      const padZ = z.z + (i < 2 ? 0 : 10)
+      const slot = links.indexOf(contact)
+      let pad
+      if (slot === -1) {
+        // in ink, like my name on the start plaza: the title says what the area is, the number is the content
+        this.props.addText(contact.value, { x: z.x, z: z.z - 10.2, pixel: PHONE_PIXEL, color: INK, mass: 2 })
+        pad = { x: z.x, z: z.z - 7, width: 13, depth: 2.8 }
+        pad.texture = createCallPadTexture({ text: 'PARK HERE TO CALL', color: contact.color, aspect: pad.width / pad.depth })
+      } else {
+        pad = { x: z.x + (slot % 2 === 0 ? -7 : 7), z: z.z + (slot < 2 ? 0 : 10), width: 10, depth: 8 }
+        pad.texture = createPadTexture(contact)
+      }
+      const { texture } = pad
       const side = new THREE.MeshStandardMaterial({ color: contact.color, roughness: 0.6 })
-      const texture = createPadTexture(contact)
       const top = new THREE.MeshStandardMaterial({
         map: texture,
         emissiveMap: texture,
@@ -454,9 +471,14 @@ export class Zones {
         emissiveIntensity: 0,
         roughness: 0.6,
       })
-      const mesh = this.add(new THREE.BoxGeometry(10, 0.1, 8), [side, side, top, side, side, side], { x, y: 0.17, z: padZ, shadow: false })
+      const mesh = this.add(new THREE.BoxGeometry(pad.width, 0.1, pad.depth), [side, side, top, side, side, side], {
+        x: pad.x,
+        y: 0.17,
+        z: pad.z,
+        shadow: false,
+      })
       this.pads.push({ mesh, material: top, baseY: 0.17, trigger: `contact:${i}` })
-      this.triggers.push({ kind: 'contact', id: `contact:${i}`, index: i, shape: 'rect', x, z: padZ, hw: 5, hd: 4 })
+      this.triggers.push({ kind: 'contact', id: `contact:${i}`, index: i, shape: 'rect', x: pad.x, z: pad.z, hw: pad.width / 2, hd: pad.depth / 2 })
     })
     this.zoneTrigger('contact')
   }

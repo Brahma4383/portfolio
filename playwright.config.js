@@ -39,8 +39,9 @@ export default defineConfig({
       testIgnore: ['**/mobile.spec.js', '**/no-webgl.spec.js'],
     },
     {
+      // held sideways, as phones drive the island in landscape (mobile.spec.js also turns it upright)
       name: 'mobile',
-      use: { ...devices['Pixel 7'], channel: 'chrome', launchOptions: { args: gpuArgs } },
+      use: { ...devices['Pixel 7 landscape'], channel: 'chrome', launchOptions: { args: gpuArgs } },
       testMatch: '**/mobile.spec.js',
     },
     {

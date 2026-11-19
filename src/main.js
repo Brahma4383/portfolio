@@ -6,6 +6,7 @@ import { Interface } from './ui/Interface.js'
 import { Controls } from './ui/Controls.js'
 import { Sound } from './ui/Sound.js'
 import { Minimap } from './ui/Minimap.js'
+import { lockLandscape, unlockLandscape } from './ui/Landscape.js'
 import { Experience } from './world/Experience.js'
 
 function hasWebGL() {
@@ -33,11 +34,11 @@ async function boot() {
   ]).catch(() => {})
 
   const controls = new Controls({
-    joystickZone: document.getElementById('joystick-zone'),
-    joystick: document.getElementById('joystick'),
-    joystickKnob: document.getElementById('joystick-knob'),
-    driftButton: document.getElementById('drift-button'),
+    wheel: document.getElementById('wheel'),
+    wheelRim: document.getElementById('wheel-rim'),
+    gasButton: document.getElementById('gas-button'),
     brakeButton: document.getElementById('brake-button'),
+    driftButton: document.getElementById('drift-button'),
   })
   const sound = new Sound()
   const minimap = new Minimap(document.getElementById('minimap'))
@@ -51,11 +52,23 @@ async function boot() {
 
   ui.setSound(sound.enabled)
 
+  // The world stands still behind the classic page, and behind the prompt to turn
+  // a phone sideways.
+  const syncPause = () => experience.setPaused(ui.classicOpen || ui.mustRotate)
+
   ui.on('start', () => {
+    // phones: full screen and sideways, where the browser allows it (the tap allows it)
+    lockLandscape()
     sound.start()
     ui.showHud()
     minimap.resize()
     experience.start()
+    syncPause()
+  })
+  ui.on('rotate', syncPause)
+  ui.on('landscape', async () => {
+    // the prompt's "Turn it for me": if it can't, the button goes
+    if (!(await lockLandscape())) ui.el.rotateLock.hidden = true
   })
   ui.on('teleport', (id) => experience.teleport(id))
   ui.on('car', (id) => experience.setCar(id))
@@ -69,7 +82,10 @@ async function boot() {
   // The animated character on the classic page loads the first time that page opens.
   let heroRobot = null
   ui.on('classic', async (open) => {
-    experience.setPaused(open)
+    syncPause()
+    // the classic page reads upright; going back to the island turns sideways again
+    if (open) unlockLandscape()
+    else if (experience.driving) lockLandscape()
     const figure = document.querySelector('.robot') // removed when the page falls back to 2D
     if (open && !heroRobot && figure) {
       const { HeroRobot } = await import('./ui/HeroRobot.js')
@@ -79,6 +95,8 @@ async function boot() {
   })
   ui.on('panel', () => experience.updateFraming())
 
+  // on small screens, driving folds an open panel back into its card so the car stays in view
+  controls.on('drive', () => ui.collapsePanel())
   controls.on('reset', () => experience.teleport('spawn'))
   controls.on('horn', () => {
     sound.horn()
@@ -95,7 +113,7 @@ async function boot() {
     if (ui.classicOpen) ui.closeClassic()
     else if (!ui.el.menu.hidden) ui.toggleMenu(false)
     else if (!ui.el.cars.hidden) ui.toggleCars(false)
-    else ui.dismissPanel()
+    else if (!ui.collapsePanel()) ui.dismissPanel()
   })
 
   try {

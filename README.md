@@ -11,7 +11,7 @@ Portfolio of a **Backend Developer** (Python, Django, DRF, SQL) and **Software T
 | **Projects** | Four boards in a 2×2 grid: School Management, Ticket Booking, DayFlow and Banking. Each project is told in two steps: **1 · Built with** (Python, Django and SQL), then **2 · Tested with** (Selenium, TestNG, Postman, manual testing). Park on the glowing "PARK HERE" pad, or pick a project from the panel to jump straight to its board |
 | **Experience** | Office building with water tanks: Development & Testing at Shubham Tanks And Liners |
 | **Education** | Campus building, degree and certificate boards |
-| **Contact** | GitHub, LinkedIn, Email and Resume pads. Park on one and press **Enter** to open it |
+| **Contact** | My phone number stands in blocks under the title, with a **PARK HERE TO CALL** pad in front (its panel has **Call me** and **Copy number**). Below it are the GitHub, LinkedIn, Email and Resume pads. Park on one and press **Enter** to open it |
 | **Bowling lane** | Just for fun: drive into the pins |
 | **Garage** | North of the start plaza: nine car boards, each with a model of the car on a shelf and a pad in front. Park on a pad to switch to that car: Racer, Taxi, Police (its lights flash), Pickup, Camper Van, Jeep, Supercar, Bug and Limo. The car button in the top bar (or `C`) switches instantly from anywhere, and the choice is remembered |
 
@@ -50,7 +50,7 @@ An address on the site that doesn't exist gets `public/404.html`, a small self-c
 The site has its own end-to-end test suite in `tests/`, written with **Playwright** using the **Page Object Model**:
 
 ```bash
-npm test             # all 61 tests (builds the site and serves it automatically)
+npm test             # all 70 tests (builds the site and serves it automatically)
 npm run test:smoke   # only the tests tagged @smoke
 npm run test:live    # the @smoke tests against the live site instead of a local build
 npm run test:report  # open the HTML report of the last run
@@ -63,10 +63,11 @@ npm run test:report  # open the HTML report of the last run
 | `e2e/start.spec.js` | Start screen, HUD, the first hint is skipped when you jump straight into an area, every button has an accessible name |
 | `e2e/zones.spec.js` | Data-driven: each area opens the right panel; explored counter; closed panels stay closed; the Stormtrooper loads, plays emotes and every trick, and a move asked for mid-flip waits its turn; a knocked crate stack and knocked pixel letters rebuild 20 s later; Test Lab steps; the bug radar counts the bugs and points to the nearest, also after leaving the lab and coming back |
 | `e2e/projects.spec.js` | Data-driven: each project's title, tags and link; crashing into a board breaks it and it rebuilds 15–20 s later; Enter opens the link in a new tab |
+| `e2e/contact.spec.js` | Data-driven: the Contact panel lists every contact once, phone number included; **Copy** puts the number on the clipboard |
 | `e2e/resume.spec.js` | PDF is served; **View** opens a new tab; **Download** saves the right file name, in every place it appears |
 | `e2e/classic.spec.js` | Classic page sections; development and testing sides with all their steps and tools; the toolkit loops move and stop while hovered; the 3D character loads and switches idle → walk → run, acts out every API console request, answers pokes (429 when poked too fast) and fidgets when left alone; back to the island; every link loads and external links open safely |
 | `e2e/controls.spec.js` | Night mode, sound setting survives a reload, Escape, R, driving with W |
-| `e2e/mobile.spec.js` | Pixel 7 emulation: touch controls, bottom-sheet panels, the menu opens the classic view, the classic page shows the name before the 3D character, joystick drives the car |
+| `e2e/mobile.spec.js` | Pixel 7 emulation, held sideways: the steering wheel and pedals show instead of keyboard hints; turning the wheel and holding Gas drives the car (two thumbs at once, sent as real multi-touch through the Chrome DevTools Protocol) and the wheel turns back when let go; steering onto the phone number's pad shows the number on the card; an area shows a small card clear of the controls; the card opens the panel down the right side, below which the pedals sit clear of the minimap; taking the wheel folds the panel back; boards picked from a panel arrive open; on a small phone the menu opens the classic view. Held upright: the island pauses behind a prompt to turn sideways (and carries on once turned), the prompt offers the classic view, and the classic page shows the name before the 3D character. A narrow browser window (mouse, no touch) opens the panel as a bottom sheet |
 | `e2e/meta.spec.js` | The link-preview image is served at the size its tags promise; the structured data (JSON-LD) matches the profile and its links |
 | `e2e/not-found.spec.js` | The 404 page says so and links back to the home page's own address; against the live site, a missing address answers 404 with that page |
 | `e2e/no-webgl.spec.js` | Chrome with WebGL turned off falls back to the classic page |
@@ -90,7 +91,7 @@ The tests read their expected data from `src/data/portfolio.js` and `src/world/l
 | `Esc` | Close the panel, menu or classic view |
 | Mouse wheel | Zoom |
 
-On touch screens, drag anywhere on the left half to steer (the car heads toward where you point), and hold **Drift** or **Brake** on the right. The pin button in the top bar jumps straight to any area; on phones its menu also has **Open the classic view**, since the top bar has no room for that button.
+On touch screens you drive with a **steering wheel** under the left thumb (grab the rim anywhere and turn it; it springs back to the middle when let go, and its hub shows the speed) and **pedals** under the right: hold **Gas** to drive and **Brake** to stop, then reverse; **Drift** is the handbrake. Phones drive in **landscape**: on Android, Start goes full screen and locks the screen sideways; elsewhere (an iPhone), a phone held upright gets a "Turn your phone sideways" prompt, with the island paused behind it and the classic view offered instead. The classic view itself reads upright, so opening it leaves full screen and unlocks the screen, and going back to the island locks it again. On phones an area first shows only a small card at the top, so nothing covers the car while driving; tap **Read** to open the full panel down the right side (the wheel stays in view on the left), and take the wheel or tap **Minimise** to fold it away again. The pin button in the top bar jumps straight to any area; on small phones its menu also has **Open the classic view**, since the top bar has no room for that button.
 
 ## Editing the content
 
@@ -137,7 +138,8 @@ src/
     BugRadar.js         the Test Lab panel's bug radar: the real bugs around the car on the radar
     LogoLoop.js         an endlessly scrolling row of logos, ported from React Bits (see Credits)
     ToolLoop.js         turns a toolkit list into a LogoLoop of tool logos
-    Controls.js         keyboard, touch joystick and buttons
+    Controls.js         keyboard, and the touch steering wheel and pedals
+    Landscape.js        phones drive sideways: full screen + landscape lock where allowed
     Minimap.js          the round map
     Sound.js            engine, horn and bump sounds (Web Audio, no files)
   utils/
