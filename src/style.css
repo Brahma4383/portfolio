@@ -2308,6 +2308,12 @@ img.logoloop__visual {
     bottom: max(22px, env(safe-area-inset-bottom));
   }
 
+  /* the open panel covers that spot: the hint waits until it's folded away */
+  .hud.is-open .panel.is-open ~ .hint {
+    opacity: 0;
+    transition-delay: 0s;
+  }
+
   .toast {
     top: auto;
     bottom: calc(max(22px, env(safe-area-inset-bottom)) + 66px);

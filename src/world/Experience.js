@@ -348,7 +348,8 @@ export class Experience {
       this.cameraRig.setFraming(0, this.cameraRig.framingForScreenY(1 - (2 * middle) / height))
     } else {
       const metresPerPixel = (2 * this.cameraRig.distance * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2))) / height
-      this.cameraRig.setFraming((panel.width / 2) * metresPerPixel, 0)
+      // centred in what's left between the steering wheel (touch screens) and the panel
+      this.cameraRig.setFraming(((panel.width - panel.leftInset) / 2) * metresPerPixel, 0)
     }
   }
 

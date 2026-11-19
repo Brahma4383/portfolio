@@ -538,7 +538,10 @@ export class Interface {
   get panelSize() {
     const { panel, hudTop } = this.el
     if (panel.hidden || panel.classList.contains('is-closing')) return null
+    // touch screens: the steering wheel takes the bottom-left corner
+    const wheel = document.getElementById('wheel')
     return {
+      leftInset: wheel.offsetParent ? wheel.getBoundingClientRect().right : 0,
       width: panel.offsetWidth + 16,
       height: panel.offsetHeight + 12,
       top: hudTop.getBoundingClientRect().bottom,
