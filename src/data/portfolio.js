@@ -112,7 +112,7 @@ export const projects = [
         'suites run from testng.xml on Chrome, Firefox and Edge.',
       stack: ['Selenium', 'Java', 'TestNG', 'Maven', 'Apache POI'],
     },
-    link: GITHUB,
+    link: `${GITHUB}/student-management-system`,
   },
   {
     name: 'Ticket Booking Platform',
@@ -130,7 +130,7 @@ export const projects = [
         'for status codes, response data and negative cases.',
       stack: ['Selenium', 'Java', 'Postman', 'E2E'],
     },
-    link: GITHUB,
+    link: GITHUB, // no public repository yet: the profile
   },
   {
     name: 'DayFlow',
@@ -148,7 +148,7 @@ export const projects = [
         'and completing a habit twice.',
       stack: ['Postman', 'API testing', 'Negative testing'],
     },
-    link: GITHUB,
+    link: `${GITHUB}/DayFlow`,
   },
   {
     name: 'Banking Management System',
@@ -166,7 +166,7 @@ export const projects = [
         'balances in the database with SQL, and logged defects with severity and priority.',
       stack: ['Manual testing', 'BVA / EP', 'SQL'],
     },
-    link: GITHUB,
+    link: `${GITHUB}/Banking-Management-System`,
   },
 ]
 

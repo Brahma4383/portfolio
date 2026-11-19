@@ -25,7 +25,7 @@ test.describe('Projects', () => {
       await expect(phases.nth(0).locator('.chips li')).toHaveText(project.built.stack)
       await expect(phases.nth(1).locator('.chips li')).toHaveText(project.tested.stack)
 
-      await expect(portfolio.panel.getByRole('link', { name: /See my GitHub/ })).toHaveAttribute('href', project.link)
+      await expect(portfolio.panel.getByRole('link', { name: /GitHub ↗/ })).toHaveAttribute('href', project.link)
     })
   })
 

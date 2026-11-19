@@ -97,7 +97,7 @@ On touch screens you drive with a **steering wheel** under the left thumb (grab 
 
 All text lives in **`src/data/portfolio.js`**: profile, experience, projects, skills, education, certifications and contact links. The 3D boards, info panels and classic page are all generated from it, so that's the only file to touch when something changes.
 
-- Each project's `link` currently points to the GitHub profile. When a repository is public, replace it with the repo URL.
+- Each project's `link` is its GitHub repository. Ticket Booking has no public repository yet, so its link is the GitHub profile; replace it with the repo URL once there is one.
 - Each project has `built` and `tested`, each with a `text` and a `stack`. The 3D board shows both stacks as chips; the panel and classic page show the full text.
 - Each skill group shows its first six `crates` as crates (the first one goes on top); `more` only appears in the panel and classic page.
 - `testing.steps` and `testing.toolkit` fill the Test Lab: the pipeline blocks, the "How I test" panel and the testing side of the classic page's "How I build & test". `development.steps` and `development.toolkit` fill its development side.

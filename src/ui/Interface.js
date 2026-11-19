@@ -34,6 +34,8 @@ const ROBOT_REQUESTS = [
 ]
 
 const NEW_TAB = 'target="_blank" rel="noopener noreferrer"'
+// A project links to its own repository, or to my profile while it has none.
+const hasRepo = (project) => /github\.com\/[^/]+\/[^/]+/.test(project.link)
 const FIRST_HINT = 'Drive into an area to read about it'
 
 // Phones and other small screens. A full panel there would cover half the island and
@@ -687,7 +689,7 @@ export class Interface {
       <h2>${escapeHtml(project.name)}</h2>
       ${projectPhases(project)}
       <div class="panel__actions">
-        <a class="button button--accent" href="${project.link}" ${NEW_TAB}>See my GitHub ↗</a>
+        <a class="button button--accent" href="${project.link}" ${NEW_TAB}>${hasRepo(project) ? 'See the code on GitHub' : 'See my GitHub'} ↗</a>
         <span class="panel__key for-keys"><kbd>Enter</kbd> to open</span>
       </div>`
   }
@@ -923,7 +925,7 @@ export class Interface {
                     <h3>${escapeHtml(p.name)}</h3>
                     <p>${escapeHtml(p.kind)}</p>
                   </div>
-                  <a class="project-card__link" href="${p.link}" ${NEW_TAB}>GitHub ↗</a>
+                  <a class="project-card__link" href="${p.link}" ${NEW_TAB}>${hasRepo(p) ? 'Code' : 'GitHub'} ↗</a>
                 </header>
                 ${projectPhases(p)}
               </article>`,
